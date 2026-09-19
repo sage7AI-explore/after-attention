@@ -3,6 +3,34 @@
 Versioning rule: any fix to a delivered file gets a new version number. Earlier versions stay in
 the folder rather than being overwritten.
 
+## v0.9 — 19 Sep 2026
+
+**Gamma is measured. New section 8.** 18,000 preregistered purchase decisions across three
+shopping agents. One sentence of unverifiable promotional text raises a mid-ranked product's
+selection rate by 8x (claude-sonnet-5, 1.6% to 13.5%), 14x (gemini-3.8-flash, 0.8% to 10.9%)
+and 12x (gpt-5.6-terra, 2.9% to 35.0%). The length-matched placebo does nothing on any model
+(z = -0.04, +1.18, +1.25), which is what makes this persuasion rather than text volume. The
+share going to the genuinely best-value product falls on every model.
+
+The effect in normalization-free units: one persuasive sentence is worth 0.85 to 1.72 standard
+deviations of true quality-adjusted value.
+
+**Section 8.4 reports a fragility in our own parameterization rather than hiding it.** Mapping
+the measurement to the model's gamma needs a cost per rewrite and a value dispersion, neither
+observed. Worse, because theta_q = 12 and lambda*c = 10(1+m) nearly cancel in q, sigma_V
+collapses to zero at a gross margin of exactly 0.20. Implied gamma spans 0.07 to 2.14 depending
+on where in that range one stands, so no single number is quoted. What survives is the claim
+the paper needs: measured persuadability is nowhere near the gamma = 0 pole.
+
+**Consequent changes.** The abstract gains the measurement as a fourth headline result.
+Limitation 1, which said gamma was stylized and unmeasured, is replaced by what the measurement
+does and does not pin down. The conclusion's conditional "if agents can be moved by how a
+listing is written" becomes a statement of fact. Sections 8-11 renumbered to 9-12; subsection
+count checked (11 -> 16, the five new ones) and every cross-reference re-resolved, after the
+v0.7 incident where renumbering silently dropped a subsection.
+
+24 pages. Verified: 7 dollar signs, all currency; no literal math; no stray LaTeX.
+
 ## v0.8 — 19 Sep 2026
 
 **Sangaraju and Vissa is published, and the citation is now correct.** v0.7 recited it as a
