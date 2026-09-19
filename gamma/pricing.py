@@ -63,6 +63,26 @@ def project(model, n_calls, in_tokens, out_tokens):
     return n_calls * cost(model, in_tokens * infl, out_tokens * infl)
 
 
+# Token counts MEASURED by diagnose.py on 19 September 2026, one call per provider on
+# arm B of choice set 0. Used for the cost projection only. They are a single sample
+# each and output length varies with how much the model deliberates, so treat the
+# projection as an estimate — the hard control is the live ledger against the cap,
+# which uses the counts the API actually reports for every call.
+MEASURED = {
+    "claude-sonnet-5":  (922, 273),   # provider-default thinking on
+    "gpt-5.6-terra":    (618,  85),   # includes 64 reasoning tokens
+    "gemini-3.8-flash": (691,  60),   # 3 answer + 57 thought tokens
+}
+
+
+def expected(model, n_calls):
+    """Projected spend from measured token counts, when we have them."""
+    if model not in MEASURED:
+        return None
+    tin, tout = MEASURED[model]
+    return n_calls * cost(model, tin, tout)
+
+
 if __name__ == "__main__":
     # projection for the preregistered design: 6,000 calls, ~1,300 in / ~120 out
     print(f"{'model':24s} {'in/MTok':>8s} {'out/MTok':>9s} {'per call':>9s} {'6,000 calls':>12s}")

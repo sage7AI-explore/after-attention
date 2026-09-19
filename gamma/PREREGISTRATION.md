@@ -120,6 +120,37 @@ in the same repository.
 ---
 
 ## Amendment — 19 September 2026, before any usable data was collected
+### CORRECTED later the same day. Read the correction below before the original.
+
+**Correction.** The amendment below disabled extended thinking for the Anthropic model,
+reasoning that the OpenAI and Google models "answer directly" and that leaving reasoning on
+for one of the three would confound the comparison. **That premise was false, and the
+provider probe disproved it.** `gpt-5.6-terra` reported `reasoning_tokens: 64` — its entire
+budget — and `gemini-3.8-flash` reported `thoughtsTokenCount: 57`. All three models
+deliberate by default. Disabling it for Anthropic alone would have produced exactly the
+cross-model confound the amendment was written to prevent.
+
+The real cause of the original 100% failure was the output budget, not the reasoning
+setting: a 64-token budget is consumed by deliberation before any answer is emitted, on
+every provider. At 2048 tokens all three return a clean bare product ID.
+
+**So the configuration reverts to provider defaults**, which is what the original
+registration already specified, and the output budget rises to 2048. `--no-thinking`
+remains available for the reverse comparison, and is not the registered configuration.
+
+A second thing the probe caught: with thinking disabled, the Anthropic model answered in
+prose rather than with a bare ID, and the original permissive parser extracted the first
+product code appearing in that prose and would have recorded it as a choice. The parser is
+now strict — a reply is accepted only if it is a bare product ID — so a non-compliant reply
+is excluded and logged rather than silently turned into a fabricated observation.
+
+Still true of both this correction and the original amendment: no usable observation
+existed when either was written. Both are changes before data, not after seeing results.
+
+---
+
+**ORIGINAL AMENDMENT, SUPERSEDED — kept because a preregistration that quietly rewrites
+itself is worth nothing.**
 
 **Extended thinking is disabled for the Anthropic model.**
 

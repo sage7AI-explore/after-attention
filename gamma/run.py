@@ -34,25 +34,51 @@ class CallFailed(Exception):
     """A call that did not yield usable text, with the reason preserved for the log."""
 
 
-# ----------------------------------------------------------------- providers
-def call_anthropic(model, prompt, key, max_tokens, thinking=False):
-    """thinking=False sends thinking: disabled explicitly.
+def parse_choice(text, valid):
+    """Accept a reply ONLY if it is a bare product ID, as the instruction demands.
 
-    claude-sonnet-5 emits an extended-thinking block by default. That breaks this study
-    in two ways. A small output budget is consumed entirely by the thinking block, so no
-    answer is produced at all — the first live run's 100% failure. And a model that
-    deliberates at length before choosing is not the same decision process as one that
-    answers directly, so leaving it on for Anthropic while the other two answer directly
-    would confound the cross-model comparison with a reasoning-budget difference. A
-    cost-sensitive deployed shopping agent does not run extended thinking on every
-    product choice, which is the configuration the preregistration says it is modelling.
-    See PREREGISTRATION.md, amendment of 19 September 2026.
+    The earlier version used re.search for the first P\d\d anywhere in the reply. On a
+    model that writes prose instead of complying — which happens when reasoning is off
+    and the budget is tight — that extracts a product code from mid-sentence
+    deliberation and records it as the agent's choice. The probe caught exactly this:
+    a reply beginning "Looking at value per dollar across all metrics, I'" was parsed
+    as a choice of P10.
+
+    A wrong choice silently recorded is worse than a failed call, because nothing
+    downstream can detect it. Anything that is not a bare ID is excluded and logged.
+    """
+    s = (text or "").strip()
+    m = re.fullmatch(r"[*`\s]*(P\d\d)[*`.\s]*", s)
+    if not m:
+        return None, f"non-compliant reply (not a bare ID): {s[:70]!r}"
+    pid = m.group(1)
+    if pid not in valid:
+        return None, f"ID not in this choice set: {pid}"
+    return pid, None
+
+
+# ----------------------------------------------------------------- providers
+def call_anthropic(model, prompt, key, max_tokens, thinking=True):
+    """thinking=True leaves the provider default alone; False sends thinking: disabled.
+
+    The default is ON, which is the provider default and therefore what the original
+    preregistration specifies. An earlier amendment disabled it on the premise that the
+    OpenAI and Google models answer directly; the provider probe showed they do not.
+    gpt-5.6-terra reported reasoning_tokens equal to its whole budget and
+    gemini-3.8-flash reported thoughtsTokenCount of 57. All three deliberate by default,
+    so disabling it for Anthropic alone would have created the very cross-model confound
+    the amendment was written to avoid. Disabling it also made this model answer in
+    prose rather than with a bare ID, which the strict parser now rejects.
+
+    The real fix for the original failure was the output budget, not the reasoning
+    setting: 64 tokens is consumed by deliberation before any answer is emitted, on all
+    three providers. See PREREGISTRATION.md, amendment of 19 September 2026 as corrected.
     """
     import requests
     payload = {"model": model, "max_tokens": max_tokens,
                "messages": [{"role": "user", "content": prompt}]}
     if not thinking:
-        payload["thinking"] = {"type": "disabled"}
+        payload["thinking"] = {"type": "disabled"}   # --no-thinking only
     r = requests.post("https://api.anthropic.com/v1/messages",
                       headers={"x-api-key": key, "anthropic-version": "2023-06-01",
                                "content-type": "application/json"},
@@ -107,7 +133,11 @@ def call_google(model, prompt, key, max_tokens):
     d = r.json()
     u = d.get("usageMetadata", {})
     tin = u.get("promptTokenCount", 0)
-    tout = u.get("candidatesTokenCount", 0)
+    # candidatesTokenCount excludes thoughtsTokenCount, but thoughts are billed as
+    # output. Counting only candidates under-reports spend by an order of magnitude
+    # here (3 answer tokens against 57 thought tokens in the probe), which would make
+    # the cap meaningless for this provider.
+    tout = u.get("candidatesTokenCount", 0) + u.get("thoughtsTokenCount", 0)
     cands = d.get("candidates") or []
     parts = (cands[0].get("content", {}).get("parts") or []) if cands else []
     text = next((p.get("text", "") for p in parts if p.get("text")), None)
@@ -117,7 +147,7 @@ def call_google(model, prompt, key, max_tokens):
     return text, tin, tout
 
 
-def call_stub(model, prompt, key, max_tokens, thinking=False):
+def call_stub(model, prompt, key, max_tokens, thinking=True):
     """Zero-cost stub. Picks a product with a mild bias toward whatever line is longest,
     so --dry-run exercises parsing, ledgering and analysis end to end."""
     ids = re.findall(r"^(P\d\d) \|", prompt, re.M)
@@ -149,12 +179,18 @@ def main():
     ap.add_argument("--sets", type=int, default=40)
     ap.add_argument("--reps", type=int, default=10)
     ap.add_argument("--framings", type=int, default=len(catalog.FRAMINGS))
-    ap.add_argument("--max-tokens", type=int, default=64,
-                    help="output budget per call; too small starves the answer when the "
-                         "model emits a preamble block first")
-    ap.add_argument("--thinking", action="store_true",
-                    help="Anthropic only: leave extended thinking ON. Off by default; see "
-                         "call_anthropic and the preregistration amendment for why.")
+    ap.add_argument("--max-tokens", type=int, default=2048,
+                    help="output budget per call. All three providers deliberate before "
+                         "answering, and a small budget is consumed entirely by that "
+                         "deliberation — 64 produced a 100%% failure on every provider.")
+    ap.add_argument("--expected-out", type=int, default=300,
+                    help="typical output tokens per call, used for the cost projection. "
+                         "The hard protection is the live ledger and the cap, not this.")
+    ap.add_argument("--no-thinking", dest="no_thinking", action="store_true",
+                    help="Anthropic only: send thinking: disabled. NOT the preregistered "
+                         "configuration — the registration fixes provider defaults, and "
+                         "all three providers deliberate by default. For the reverse "
+                         "comparison only.")
     ap.add_argument("--out", default=None)
     ap.add_argument("--dry-run", action="store_true", help="stub client, no network, no spend")
     a = ap.parse_args()
@@ -170,16 +206,22 @@ def main():
             for f in range(a.framings) for rep in range(a.reps)]
 
     # ---- 1. pre-flight
-    projected = pricing.project(a.model, len(jobs), 1300, a.max_tokens)
+    measured = pricing.expected(a.model, len(jobs))
+    projected = measured if measured is not None else \
+        pricing.project(a.model, len(jobs), 1300, a.expected_out)
+    worst = pricing.project(a.model, len(jobs), 1300, a.max_tokens)
     print(f"model        {a.model}")
     print(f"design       {len(sets)} sets x {len(ARMS)} arms x {a.framings} framings "
           f"x {a.reps} reps = {len(jobs):,} calls")
-    print(f"projected    ${projected:,.2f}   cap ${a.cap:,.2f}   "
-          f"(worst case: every call spends its full {a.max_tokens}-token budget)")
+    src = ("from tokens measured by diagnose.py" if measured is not None
+           else f"at {a.expected_out} output tokens/call (not measured)")
+    print(f"projected    ${projected:,.2f}   {src}")
+    print(f"worst case   ${worst:,.2f}   if every call spent its full {a.max_tokens}-token budget")
+    print(f"cap          ${a.cap:,.2f}   enforced on ACTUAL reported spend, not on either estimate")
     if spec["provider"] == "anthropic":
-        print(f"thinking     {'ON (not the preregistered configuration)' if a.thinking else 'disabled'}")
+        print(f"thinking     {'DISABLED (not the preregistered configuration)' if a.no_thinking else 'provider default (on)'}")
     if projected > a.cap:
-        per = pricing.project(a.model, 1, 1300, a.max_tokens)
+        per = projected / max(len(jobs), 1)
         print(f"\nREFUSING TO START: projection exceeds the cap.\n"
               f"  ${a.cap:.2f} buys about {int(a.cap / per):,} calls at ${per:.4f} each.\n"
               f"  Reduce --sets or --reps, or raise --cap deliberately.")
@@ -222,7 +264,7 @@ def main():
                 try:
                     if spec["provider"] == "anthropic" or a.dry_run:
                         text, tin, tout = caller(a.model, prompt, key, a.max_tokens,
-                                                 thinking=a.thinking)
+                                                 thinking=not a.no_thinking)
                     else:
                         text, tin, tout = caller(a.model, prompt, key, a.max_tokens)
                     err = None               # a retry that succeeded is a success
@@ -237,11 +279,9 @@ def main():
 
             choice = None
             if text:
-                m = re.search(r"P\d\d", text.strip())
-                if m and m.group(0) in positions:
-                    choice = m.group(0)
-                elif not err:
-                    err = f"unparseable reply: {text.strip()[:60]!r}"
+                choice, perr = parse_choice(text, positions)
+                if perr and not err:
+                    err = perr
             if choice is None:
                 excluded += 1
                 consecutive += 1
@@ -249,7 +289,8 @@ def main():
                 consecutive = 0
 
             fh.write(json.dumps(dict(
-                model=a.model, max_tokens=a.max_tokens, thinking=bool(a.thinking),
+                model=a.model, max_tokens=a.max_tokens,
+                thinking=(not a.no_thinking),
                 set_id=s["set_id"], arm=arm, framing=f, rep=rep,
                 choice=choice, raw=(text or "")[:40], error=err,
                 target_id=s["target_id"], best_value_id=s["best_value_id"],
