@@ -35,14 +35,28 @@ class CallFailed(Exception):
 
 
 # ----------------------------------------------------------------- providers
-def call_anthropic(model, prompt, key, max_tokens):
+def call_anthropic(model, prompt, key, max_tokens, thinking=False):
+    """thinking=False sends thinking: disabled explicitly.
+
+    claude-sonnet-5 emits an extended-thinking block by default. That breaks this study
+    in two ways. A small output budget is consumed entirely by the thinking block, so no
+    answer is produced at all — the first live run's 100% failure. And a model that
+    deliberates at length before choosing is not the same decision process as one that
+    answers directly, so leaving it on for Anthropic while the other two answer directly
+    would confound the cross-model comparison with a reasoning-budget difference. A
+    cost-sensitive deployed shopping agent does not run extended thinking on every
+    product choice, which is the configuration the preregistration says it is modelling.
+    See PREREGISTRATION.md, amendment of 19 September 2026.
+    """
     import requests
+    payload = {"model": model, "max_tokens": max_tokens,
+               "messages": [{"role": "user", "content": prompt}]}
+    if not thinking:
+        payload["thinking"] = {"type": "disabled"}
     r = requests.post("https://api.anthropic.com/v1/messages",
                       headers={"x-api-key": key, "anthropic-version": "2023-06-01",
                                "content-type": "application/json"},
-                      json={"model": model, "max_tokens": max_tokens,
-                            "messages": [{"role": "user", "content": prompt}]},
-                      timeout=60)
+                      json=payload, timeout=60)
     r.raise_for_status()
     d = r.json()
     usage = d.get("usage", {})
@@ -103,7 +117,7 @@ def call_google(model, prompt, key, max_tokens):
     return text, tin, tout
 
 
-def call_stub(model, prompt, key, max_tokens):
+def call_stub(model, prompt, key, max_tokens, thinking=False):
     """Zero-cost stub. Picks a product with a mild bias toward whatever line is longest,
     so --dry-run exercises parsing, ledgering and analysis end to end."""
     ids = re.findall(r"^(P\d\d) \|", prompt, re.M)
@@ -138,6 +152,9 @@ def main():
     ap.add_argument("--max-tokens", type=int, default=64,
                     help="output budget per call; too small starves the answer when the "
                          "model emits a preamble block first")
+    ap.add_argument("--thinking", action="store_true",
+                    help="Anthropic only: leave extended thinking ON. Off by default; see "
+                         "call_anthropic and the preregistration amendment for why.")
     ap.add_argument("--out", default=None)
     ap.add_argument("--dry-run", action="store_true", help="stub client, no network, no spend")
     a = ap.parse_args()
@@ -159,6 +176,8 @@ def main():
           f"x {a.reps} reps = {len(jobs):,} calls")
     print(f"projected    ${projected:,.2f}   cap ${a.cap:,.2f}   "
           f"(worst case: every call spends its full {a.max_tokens}-token budget)")
+    if spec["provider"] == "anthropic":
+        print(f"thinking     {'ON (not the preregistered configuration)' if a.thinking else 'disabled'}")
     if projected > a.cap:
         per = pricing.project(a.model, 1, 1300, a.max_tokens)
         print(f"\nREFUSING TO START: projection exceeds the cap.\n"
@@ -201,7 +220,11 @@ def main():
             text, tin, tout, err = None, 0, 0, None
             for attempt in range(3):
                 try:
-                    text, tin, tout = caller(a.model, prompt, key, a.max_tokens)
+                    if spec["provider"] == "anthropic" or a.dry_run:
+                        text, tin, tout = caller(a.model, prompt, key, a.max_tokens,
+                                                 thinking=a.thinking)
+                    else:
+                        text, tin, tout = caller(a.model, prompt, key, a.max_tokens)
                     err = None               # a retry that succeeded is a success
                     break
                 except Exception as e:                      # noqa: BLE001
@@ -226,7 +249,8 @@ def main():
                 consecutive = 0
 
             fh.write(json.dumps(dict(
-                model=a.model, set_id=s["set_id"], arm=arm, framing=f, rep=rep,
+                model=a.model, max_tokens=a.max_tokens, thinking=bool(a.thinking),
+                set_id=s["set_id"], arm=arm, framing=f, rep=rep,
                 choice=choice, raw=(text or "")[:40], error=err,
                 target_id=s["target_id"], best_value_id=s["best_value_id"],
                 target_position=positions[s["target_id"]],

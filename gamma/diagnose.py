@@ -1,113 +1,160 @@
 """
-One call per provider, printing the RESPONSE SHAPE rather than guessing at it.
+Provider probe. Runs the REAL parsers from run.py against real responses and reports
+whether each one yields a usable choice — rather than printing a skeleton and leaving
+a human to infer it.
 
-Costs about a cent in total. Run this before any full sweep, and after any provider
-change: the failure it exists to catch is a response whose structure is not what the
-parser assumes, which produces a run that burns hours and records nothing.
+Costs a few cents. Run before any live sweep and after any provider or model change.
 
-Prints no key material. Prints the response skeleton, the content-block types, the
-stop reason and the reported token usage.
+For Anthropic it probes several configurations, because claude-sonnet-5 emits an
+extended-thinking block by default and a small output budget is consumed entirely by
+that block before any text is produced.
 """
 import json, os, random, sys
-import catalog, pricing
+import catalog
+import run as R
 
 
-def skeleton(obj, depth=0, maxdepth=3):
-    """Structure of a JSON object: keys and types, not values."""
+def show(obj, depth=0, maxdepth=4):
     pad = "  " * depth
     if isinstance(obj, dict):
         if depth >= maxdepth:
-            return pad + "{...%d keys...}" % len(obj)
+            return pad + "{%s}" % ", ".join(obj.keys())
         out = []
         for k, v in obj.items():
             if isinstance(v, (dict, list)):
                 out.append(f"{pad}{k}:")
-                out.append(skeleton(v, depth + 1, maxdepth))
+                out.append(show(v, depth + 1, maxdepth))
             else:
-                shown = v if not isinstance(v, str) else (v[:60] + ("..." if len(v) > 60 else ""))
-                out.append(f"{pad}{k}: {type(v).__name__} = {shown!r}")
+                s = v if not isinstance(v, str) else (v[:70] + ("..." if len(v) > 70 else ""))
+                out.append(f"{pad}{k}: {s!r}")
         return "\n".join(out)
     if isinstance(obj, list):
         if not obj:
-            return pad + "[] (empty)"
-        out = [f"{pad}[{len(obj)} items]"]
-        for i, v in enumerate(obj[:4]):
-            out.append(f"{pad}  [{i}]:")
-            out.append(skeleton(v, depth + 2, maxdepth))
+            return pad + "[] EMPTY"
+        out = [f"{pad}[{len(obj)}]"]
+        for i, v in enumerate(obj[:3]):
+            out.append(f"{pad} [{i}]:")
+            out.append(show(v, depth + 2, maxdepth))
         return "\n".join(out)
-    return pad + f"{type(obj).__name__} = {obj!r}"
+    return pad + repr(obj)
 
 
-def probe(provider, model, url, headers, payload):
-    import requests
-    print("=" * 78)
-    print(f"{provider}  /  {model}")
-    print("=" * 78)
+def attempt(label, fn):
+    """Run a caller exactly as the sweep would, and report what the sweep would record."""
+    print(f"--- {label}")
     try:
-        r = requests.post(url, headers=headers, json=payload, timeout=60)
+        text, tin, tout = fn()
     except Exception as e:                                          # noqa: BLE001
-        print(f"  TRANSPORT FAILURE: {type(e).__name__}: {e}")
-        return
-    print(f"  HTTP {r.status_code}")
-    if r.status_code != 200:
-        print(f"  body: {r.text[:600]}")
-        return
-    d = r.json()
-    print("  response skeleton:")
-    print(skeleton(d, depth=2))
-    if provider == "anthropic":
-        blocks = d.get("content") or []
-        print(f"\n  content block types: {[b.get('type') for b in blocks]}")
-        print(f"  stop_reason: {d.get('stop_reason')!r}")
-        txt = next((b.get("text", "") for b in blocks if b.get("type") == "text"), None)
-        print(f"  first text block: {txt!r}")
-        if txt is None:
-            print("  >>> NO TEXT BLOCK. This is the failure mode that produced 100% errors.")
-    print()
+        print(f"    FAIL  {type(e).__name__}: {e}")
+        return False, 0.0
+    parsed = None
+    import re
+    m = re.search(r"P\d\d", (text or "").strip())
+    if m:
+        parsed = m.group(0)
+    ok = parsed is not None
+    print(f"    {'OK  ' if ok else 'FAIL'}  text={text.strip()[:50]!r}  "
+          f"parsed={parsed!r}  tokens={tin}in/{tout}out")
+    return ok, (tin, tout)
 
 
 def main():
     sets = catalog.build()
     prompt, _ = catalog.prompt(sets[0], "B", 1, random.Random(0))
+    results = {}
 
-    which = sys.argv[1:] or ["anthropic", "openai", "google"]
-    max_tokens = int(os.environ.get("DIAG_MAX_TOKENS", "64"))
-    print(f"probing with max_tokens={max_tokens}\n")
-
-    if "anthropic" in which:
-        k = os.environ.get("ANTHROPIC_API_KEY", "")
-        if not k:
-            print("ANTHROPIC_API_KEY not set; skipping\n")
+    # ---------------------------------------------------------------- anthropic
+    key = os.environ.get("ANTHROPIC_API_KEY", "")
+    print("=" * 78); print("ANTHROPIC  claude-sonnet-5"); print("=" * 78)
+    if not key:
+        print("  ANTHROPIC_API_KEY not set; skipping\n")
+    else:
+        import requests
+        raw = requests.post(
+            "https://api.anthropic.com/v1/messages",
+            headers={"x-api-key": key, "anthropic-version": "2023-06-01",
+                     "content-type": "application/json"},
+            json={"model": "claude-sonnet-5", "max_tokens": 64,
+                  "thinking": {"type": "disabled"},
+                  "messages": [{"role": "user", "content": prompt}]}, timeout=60)
+        print(f"  thinking-disabled probe: HTTP {raw.status_code}")
+        if raw.status_code != 200:
+            print("  body:", raw.text[:400])
         else:
-            probe("anthropic", "claude-sonnet-5",
-                  "https://api.anthropic.com/v1/messages",
-                  {"x-api-key": k, "anthropic-version": "2023-06-01",
-                   "content-type": "application/json"},
-                  {"model": "claude-sonnet-5", "max_tokens": max_tokens,
-                   "messages": [{"role": "user", "content": prompt}]})
+            d = raw.json()
+            print("  content blocks:", [b.get("type") for b in d.get("content", [])])
+            print("  stop_reason:", repr(d.get("stop_reason")))
+            print("  usage:", json.dumps(d.get("usage", {})))
+        print()
+        results["anthropic/thinking-disabled/64"] = attempt(
+            "thinking disabled, max_tokens=64",
+            lambda: R.call_anthropic("claude-sonnet-5", prompt, key, 64, thinking=False))
+        results["anthropic/thinking-on/2048"] = attempt(
+            "thinking default (on), max_tokens=2048",
+            lambda: R.call_anthropic("claude-sonnet-5", prompt, key, 2048, thinking=True))
+        print()
 
-    if "openai" in which:
-        k = os.environ.get("OPENAI_API_KEY", "")
-        if not k:
-            print("OPENAI_API_KEY not set; skipping\n")
+    # ---------------------------------------------------------------- openai
+    key = os.environ.get("OPENAI_API_KEY", "")
+    print("=" * 78); print("OPENAI  gpt-5.6-terra"); print("=" * 78)
+    if not key:
+        print("  OPENAI_API_KEY not set; skipping\n")
+    else:
+        import requests
+        raw = requests.post("https://api.openai.com/v1/chat/completions",
+                            headers={"Authorization": f"Bearer {key}",
+                                     "content-type": "application/json"},
+                            json={"model": "gpt-5.6-terra", "max_completion_tokens": 64,
+                                  "messages": [{"role": "user", "content": prompt}]},
+                            timeout=60)
+        if raw.status_code == 200:
+            d = raw.json()
+            print("  choices[0]:"); print(show(d.get("choices", [{}])[0], 2))
+            print("  usage:", json.dumps(d.get("usage", {})))
         else:
-            probe("openai", "gpt-5.6-terra",
-                  "https://api.openai.com/v1/chat/completions",
-                  {"Authorization": f"Bearer {k}", "content-type": "application/json"},
-                  {"model": "gpt-5.6-terra", "max_completion_tokens": max_tokens,
-                   "messages": [{"role": "user", "content": prompt}]})
+            print(f"  HTTP {raw.status_code}: {raw.text[:400]}")
+        print()
+        results["openai/64"] = attempt(
+            "max_completion_tokens=64",
+            lambda: R.call_openai("gpt-5.6-terra", prompt, key, 64))
+        results["openai/2048"] = attempt(
+            "max_completion_tokens=2048",
+            lambda: R.call_openai("gpt-5.6-terra", prompt, key, 2048))
+        print()
 
-    if "google" in which:
-        k = os.environ.get("GEMINI_API_KEY", "")
-        if not k:
-            print("GEMINI_API_KEY not set; skipping\n")
+    # ---------------------------------------------------------------- google
+    key = os.environ.get("GEMINI_API_KEY", "")
+    print("=" * 78); print("GOOGLE  gemini-3.8-flash"); print("=" * 78)
+    if not key:
+        print("  GEMINI_API_KEY not set; skipping\n")
+    else:
+        import requests
+        raw = requests.post(
+            "https://generativelanguage.googleapis.com/v1beta/models/"
+            "gemini-3.8-flash:generateContent",
+            headers={"x-goog-api-key": key, "content-type": "application/json"},
+            json={"contents": [{"parts": [{"text": prompt}]}],
+                  "generationConfig": {"maxOutputTokens": 64}}, timeout=60)
+        if raw.status_code == 200:
+            d = raw.json()
+            print("  candidates[0]:"); print(show(d.get("candidates", [{}])[0], 2))
+            print("  usageMetadata:", json.dumps(d.get("usageMetadata", {})))
         else:
-            probe("google", "gemini-3.8-flash",
-                  "https://generativelanguage.googleapis.com/v1beta/models/"
-                  "gemini-3.8-flash:generateContent",
-                  {"x-goog-api-key": k, "content-type": "application/json"},
-                  {"contents": [{"parts": [{"text": prompt}]}],
-                   "generationConfig": {"maxOutputTokens": max_tokens}})
+            print(f"  HTTP {raw.status_code}: {raw.text[:400]}")
+        print()
+        results["google/64"] = attempt(
+            "maxOutputTokens=64",
+            lambda: R.call_google("gemini-3.8-flash", prompt, key, 64))
+        results["google/2048"] = attempt(
+            "maxOutputTokens=2048",
+            lambda: R.call_google("gemini-3.8-flash", prompt, key, 2048))
+        print()
+
+    print("=" * 78); print("SUMMARY"); print("=" * 78)
+    for k, (ok, tok) in results.items():
+        print(f"  {'PASS' if ok else 'FAIL'}  {k:38s} tokens={tok}")
+    print("\nA configuration only counts as usable if it PASSES. Do not start a sweep on a")
+    print("configuration that failed here; that is what produced a 100%-error run.")
 
 
 if __name__ == "__main__":
