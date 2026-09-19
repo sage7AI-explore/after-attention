@@ -135,8 +135,22 @@ sim/        sim2.py (harness), plot2.py, plot_phase.py, legacy/sim.py
 gamma/      catalog.py, run.py, estimate.py, pricing.py, PREREGISTRATION.md
 results/    .jsonl output, one line per run
 figures/    generated figures
-paper/      the current draft PDF
+paper/      the draft markdown, build_pdf.py, and the generated PDF
+CHANGELOG.md  what changed between drafts, including claims that were withdrawn
 ```
+
+## Rebuilding the paper
+
+The PDF is generated from the markdown source, not hand-assembled:
+
+```bash
+python3 paper/build_pdf.py        # run from the repository root
+```
+
+It reads `paper/After_Attention_draft_v0.7.md` and the two figures in `figures/`, and writes
+`paper/After_Attention_draft_v0.7.pdf` (21 pages). `CHANGELOG.md` records every draft revision,
+including the 95% misallocation result that was reported in an earlier version and later
+withdrawn.
 
 ## Citation
 
