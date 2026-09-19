@@ -8,8 +8,8 @@ from reportlab.lib.enums import TA_JUSTIFY, TA_CENTER
 from reportlab.platypus import (BaseDocTemplate, PageTemplate, Frame, Paragraph,
                                 Spacer, Table, TableStyle, Image, KeepTogether)
 
-SRC = "paper/After_Attention_draft_v0.7.md"
-OUT = "paper/After_Attention_draft_v0.7.pdf"
+SRC = "paper/After_Attention_draft_v0.8.md"
+OUT = "paper/After_Attention_draft_v0.8.pdf"
 FIG = "figures/fig_outcomes_v2.png"
 RUNNING = "After Attention: The Economics of Markets Where the Buyer Is an Agent"
 
@@ -48,18 +48,15 @@ GREEK = {r"\alpha": "\u03b1", r"\gamma": "\u03b3", r"\beta": "\u03b2", r"\lambda
          r"\delta": "δ", r"\tau": "τ", r"\iota": "ι", r"\rho": "ρ",
          r"\underline{\alpha}": "α\u0331", r"\bar{\alpha}": "ᾱ"}
 
-def _is_math(s):
-    """A $...$ span is math if it carries math syntax or is a bare symbol.
-    Currency runs like '$900 billion to $1 trillion' are left alone."""
-    s = s.strip()
-    if not s:
-        return False
-    if "\\" in s or "_" in s or "^" in s:
-        return True
-    return len(s) <= 4 and not s[0].isdigit()
+# Currency in the source is written escaped (\\$900 billion), so every unescaped dollar
+# is a math delimiter. Deciding which is which from a span's contents is what put
+# "$A + G$" and "$N = 12$" into the v0.7 PDF as literal text: any rule narrow enough to
+# protect currency also rejected real math. The ambiguity is removed at the source.
+CURRENCY = "\uE000"   # private-use placeholder, restored to a literal $ at the end
 
 
 def inline(t):
+    t = t.replace("\\$", CURRENCY)
     t = t.replace("&", "&amp;").replace("<", "&lt;").replace(">", "&gt;")
     t = re.sub(r"\*\*(.+?)\*\*", r"<b>\1</b>", t)
     t = re.sub(r"(?<!\*)\*([^*]+?)\*(?!\*)", r"<i>\1</i>", t)
@@ -76,9 +73,6 @@ def inline(t):
 
     t = re.sub(r"\$\$(.+?)\$\$", lambda m: render(m.group(1)), t, flags=re.S)
 
-    # single-$ spans: scan rather than regex-pair, so a currency run like
-    # "$900 billion to $1 trillion" consumes only its own opening dollar and
-    # leaves any following math ("$\\gamma$") correctly paired.
     out, i = [], 0
     while True:
         j = t.find("$", i)
@@ -86,13 +80,10 @@ def inline(t):
             out.append(t[i:]); break
         k = t.find("$", j + 1)
         if k < 0:
+            # unbalanced delimiter: leave the rest untouched rather than eat text
             out.append(t[i:]); break
-        span = t[j + 1:k]
-        if "\n" not in span and len(span) <= 160 and _is_math(span):
-            out.append(t[i:j]); out.append(render(span)); i = k + 1
-        else:
-            out.append(t[i:j + 1]); i = j + 1
-    return "".join(out)
+        out.append(t[i:j]); out.append(render(t[j + 1:k])); i = k + 1
+    return "".join(out).replace(CURRENCY, "$")
 
 
 def build_table(rows):

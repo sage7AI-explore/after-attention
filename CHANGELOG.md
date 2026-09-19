@@ -3,6 +3,32 @@
 Versioning rule: any fix to a delivered file gets a new version number. Earlier versions stay in
 the folder rather than being overwritten.
 
+## v0.8 — 19 Sep 2026
+
+**Sangaraju and Vissa is published, and the citation is now correct.** v0.7 recited it as a
+preprint with a note that the IEEE Access record could not be located. It could: the paper was
+received 12 August 2026, accepted 30 August 2026, published 3 September 2026, and appears as
+*IEEE Access*, vol. 14, pp. 139683-139693, DOI 10.1109/ACCESS.2026.3730363. The reference and the
+in-text citation in section 9 both drop the "preprint" qualifier. What misled the v0.7 check was the
+first author's own repository, which still carries the June 2026 preprint BibTeX under a shorter
+title and no DOI - stale rather than wrong. Author name follows the published byline
+("Sangaraju, V."), which omits the middle initial the After Attention byline uses.
+
+**Math rendering was broken, and the v0.7 PDF shipped with the defect.** Inline spans such as
+`$A + G$`, `$N = 12$`, `$M = 3{,}000$`, `$(0,1)$`, `$+0.83$` and `$(p-c)(H/2 + T/2)$` printed as
+literal source text, complete with dollar signs and braces, in sections 5, 6, 7, Table 2, Table A1
+and the Proposition 1 proof. The v0.7 verification pass checked numbers and citations but only
+counted dollar signs rather than inspecting them, so it reported clean.
+
+Cause: the builder guessed whether a `$...$` span was math or currency from its contents, and the
+guess was tuned to protect currency runs like "$900 billion to $1 trillion". Every rule narrow
+enough to do that also rejected ordinary math. Fixed by removing the ambiguity rather than
+retuning the guess: the seven genuine currency amounts in the source are now escaped (`\$900
+billion`), so every unescaped dollar is a math delimiter and no heuristic is needed.
+
+Verified on the rebuilt PDF: 7 dollar signs, all currency; 0 literal math spans; 0 stray LaTeX
+commands; 21 pages.
+
 ## v0.7 — 19 Sep 2026
 Venkat's item 10: full citation-by-citation verification and an artifact read-through.
 

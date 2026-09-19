@@ -4,7 +4,7 @@
 
 ¹ SAGE7 AI · Correspondence: sudhir.vissa@sage7.ai
 
-*Draft v0.7 — September 19, 2026. Working paper; comments welcome.*
+*Draft v0.8 — September 19, 2026. Working paper; comments welcome.*
 
 ---
 
@@ -19,9 +19,9 @@ The consumer economy runs in part on *attention rent*: margin that sellers extra
 
 ## 1. Introduction
 
-Roughly $1.3 trillion of global advertising revenue is forecast for 2026, excluding US political advertising (WPP Media 2026). A large share of that spending exists because human buyers do not compare exhaustively: they consider a handful of options, weight familiarity, and can be moved by presentation. Following Stigler (1961), we call the resulting margin *attention rent* — the part of a seller's markup that survives only because buyers' search and recall are limited and their preferences are manipulable.
+Roughly \$1.3 trillion of global advertising revenue is forecast for 2026, excluding US political advertising (WPP Media 2026). A large share of that spending exists because human buyers do not compare exhaustively: they consider a handful of options, weight familiarity, and can be moved by presentation. Following Stigler (1961), we call the resulting margin *attention rent* — the part of a seller's markup that survives only because buyers' search and recall are limited and their preferences are manipulable.
 
-Purchasing agents attack that rent directly. An agent can enumerate a catalog, hold prices and attributes in memory, and choose without fatigue. Forecasts of adoption are substantial: Morgan Stanley (2025) projects $190–385 billion of US e-commerce spending by agentic shoppers by 2030, and McKinsey (2025) puts "orchestrated revenue" in US B2C retail at $900 billion to $1 trillion by 2030, with a global range of $3–5 trillion. The payment rails are already shipping — Mastercard Agent Pay (April 2025), Google's Agent Payments Protocol (September 2025), OpenAI and Stripe's Instant Checkout and Agentic Commerce Protocol (September 2025), Visa's Trusted Agent Protocol (October 2025), and the Universal Commerce Protocol co-developed by Google with Shopify, Etsy, Wayfair, Target and Walmart (January 2026). Early displacement of human attention is already measurable in adjacent behavior: Pew Research Center (2025) found that users clicked a traditional search result on 8% of visits to Google searches returning an AI summary, versus 15% of visits without one.
+Purchasing agents attack that rent directly. An agent can enumerate a catalog, hold prices and attributes in memory, and choose without fatigue. Forecasts of adoption are substantial: Morgan Stanley (2025) projects \$190–385 billion of US e-commerce spending by agentic shoppers by 2030, and McKinsey (2025) puts "orchestrated revenue" in US B2C retail at \$900 billion to \$1 trillion by 2030, with a global range of \$3–5 trillion. The payment rails are already shipping — Mastercard Agent Pay (April 2025), Google's Agent Payments Protocol (September 2025), OpenAI and Stripe's Instant Checkout and Agentic Commerce Protocol (September 2025), Visa's Trusted Agent Protocol (October 2025), and the Universal Commerce Protocol co-developed by Google with Shopify, Etsy, Wayfair, Target and Walmart (January 2026). Early displacement of human attention is already measurable in adjacent behavior: Pew Research Center (2025) found that users clicked a traditional search result on 8% of visits to Google searches returning an AI summary, versus 15% of visits without one.
 
 The natural inference is that attention rent collapses and the advertising that harvests it goes with it. We argue that this inference is right in direction and wrong in shape, for two reasons that both follow from what agent demand looks like from a seller's side.
 
@@ -292,7 +292,7 @@ That has an uncomfortable corollary for policy. Competition policy, advertising 
 
 If robust agents make consumer advertising unsellable in a category, sellers still need to be chosen. Four instruments plausibly absorb the spend, and they differ sharply in whether they route demand to value.
 
-1. **Verifiable claims.** Signed, machine-checkable attributes (provenance, delivery commitments, test results) that an agent can verify instead of reading persuasive prose. This is the value-routing substitute: it makes truth cheaper to transmit than persuasion. As §3 shows, this is precisely the layer the current rails leave unbuilt: they sign the transaction envelope and the payment authorization, not the claim. Lineage-gated attestation architectures developed for enterprise data governance (Sangaraju and Vissa 2026, preprint) offer a technical template — derivation-gated access control that binds a claim's validity to its verified provenance chain rather than to the claimant's own assertion — adaptable here to bind a product claim's trustworthiness to an attested source instead of the seller's word.
+1. **Verifiable claims.** Signed, machine-checkable attributes (provenance, delivery commitments, test results) that an agent can verify instead of reading persuasive prose. This is the value-routing substitute: it makes truth cheaper to transmit than persuasion. As §3 shows, this is precisely the layer the current rails leave unbuilt: they sign the transaction envelope and the payment authorization, not the claim. Lineage-gated attestation architectures developed for enterprise data governance (Sangaraju and Vissa 2026) offer a technical template — derivation-gated access control that binds a claim's validity to its verified provenance chain rather than to the claimant's own assertion — adaptable here to bind a product claim's trustworthiness to an attested source instead of the seller's word.
 2. **Agent-readable reputation.** Structured outcome histories — return rates, delivery performance, warranty claims — auditable rather than curated. Agents reward this only if it is attested; otherwise it degrades into the same optimization target as description text.
 3. **Agent-to-agent negotiation.** Price and terms set through protocol rather than posted. This shifts rent toward whoever has better information about the counterparty, which is a different distributional question from attention rent.
 4. **Agent-directed optimization.** The $G$ of our model: content and structure engineered for agent consumption. This is the instrument that Proposition 2 predicts will be funded. On our results it does not chiefly reroute demand away from good sellers; it raises what those sellers can charge and concentrates the market around whoever spends most. Generative engine optimization (Aggarwal et al. 2024) is its existing commercial form.
@@ -305,7 +305,7 @@ Which of these dominates is not a technological question but a question of what 
 
 **Retailers and platforms.** Under robust agents, the margin available from obfuscation (Ellison and Ellison 2009) goes to zero. Under persuadable agents, whoever controls the surface an agent reads captures the migrated persuasion spend — which is a reason to expect platforms to prefer persuadable agents, and a reason to watch rail consolidation (AP2, ACP, the Universal Commerce Protocol) as a market-structure question rather than a plumbing one. The rails as specified (§3) do not constrain this: whoever defines the surface an agent reads captures the migrated spend, and no published protocol requires that surface to separate attested fact from promotion.
 
-**Advertising platforms.** The $1.3 trillion figure is not a single pool that either survives or disappears; it is a pool that migrates at a rate set by $\gamma$ and $\alpha$. Our manipulable-regime result — total persuasion spending peaking at 1.68 times the pre-agent level — implies the intermediate transition is a growth period for agent-directed persuasion services even as consumer advertising declines.
+**Advertising platforms.** The \$1.3 trillion figure is not a single pool that either survives or disappears; it is a pool that migrates at a rate set by $\gamma$ and $\alpha$. Our manipulable-regime result — total persuasion spending peaking at 1.68 times the pre-agent level — implies the intermediate transition is a growth period for agent-directed persuasion services even as consumer advertising declines.
 
 **Regulators.** The object to regulate is agent resistance, not agent access. A registry of agents that lists identity without attesting susceptibility does not constrain the mechanism in P2. The same holds for the standards: mandating protocol adoption raises $\alpha$ and leaves $\gamma$ untouched, which by our results is the combination that produces the worst outcomes.
 
@@ -374,7 +374,7 @@ Mastercard (2025). *Mastercard Agent Pay*. Announced 29 April 2025. (Extended by
 
 McKinsey & Company (2025). *The agentic commerce opportunity: How AI agents are ushering in a new era for consumers and merchants*. Schumacher, K., Roberts, R., and Giebel, K. QuantumBlack, AI by McKinsey, 17 October 2025.
 
-Morgan Stanley Research (2025). *Here Come the Shopping Bots*. 8 December 2025. (Projects $190–385 billion of US agentic e-commerce spending by 2030.)
+Morgan Stanley Research (2025). *Here Come the Shopping Bots*. 8 December 2025. (Projects \$190–385 billion of US agentic e-commerce spending by 2030.)
 
 OpenAI and Stripe (2025). *Agentic Commerce Protocol (ACP) and Instant Checkout*. Announced 29 September 2025.
 
@@ -384,7 +384,7 @@ Salvi, F., Cuevas, M., and Horta Ribeiro, M. (2026). *Commercial Persuasion in A
 
 Salop, S., and Stiglitz, J. (1977). Bargains and Ripoffs: A Model of Monopolistically Competitive Price Dispersion. *Review of Economic Studies*, 44(3), 493–510.
 
-Sangaraju, V. M., and Vissa, S. (2026). *Lineage-Aware Memory Governance for Enterprise AI Agents*. Preprint, June 2026. [Publication status to confirm before submission: a DOI under IEEE Access has been reported but the record could not be located on IEEE Xplore or in any index as of 19 September 2026.]
+Sangaraju, V., and Vissa, S. (2026). Lineage-aware memory governance: A derivation-gated framework for privacy-preserving column-level access control in enterprise AI agents. *IEEE Access*, 14, 139683–139693. DOI: 10.1109/ACCESS.2026.3730363.
 
 Shahidi, P., Rusak, G., Manning, B. S., Fradkin, A., and Horton, J. J. (2025). *The Coasean Singularity? Demand, Supply, and Market Design with AI Agents*. NBER Working Paper 34468.
 
