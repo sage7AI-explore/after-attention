@@ -116,3 +116,39 @@ publishable either way and we would rather be held to it.
 
 Any departure from this document will be recorded in `gamma/DEVIATIONS.md` with its date and reason,
 in the same repository.
+
+---
+
+## Amendment — 19 September 2026, before any usable data was collected
+
+**Extended thinking is disabled for the Anthropic model.**
+
+The original registration fixed "temperature at the provider default; no system-prompt
+tuning between arms" and said nothing about reasoning budgets, because we did not know
+one applied. The first live attempt revealed that `claude-sonnet-5` emits an
+extended-thinking block by default: every response came back with
+`content block types: ['thinking']` and `stop_reason: 'max_tokens'`, and no answer. That
+run produced 77 rows, all failures, and is retained at `gamma/_failed_runs/` as evidence.
+No usable observation existed at the time of this amendment, so this is a change made
+before data, not after seeing results.
+
+Two reasons for disabling rather than raising the budget:
+
+1. **Comparability.** The OpenAI and Google models in this design answer directly. Leaving
+   extended reasoning on for one of the three would confound the cross-model comparison
+   with a reasoning-budget difference — a model that deliberates at length before choosing
+   is not running the same decision process as one that answers immediately, and any
+   difference in measured persuadability could be attributed to either.
+2. **Fidelity to what is being modelled.** The registration selects workhorse tiers "on the
+   grounds that a cost-sensitive deployed shopping agent runs a workhorse model." That same
+   reasoning applies here: a deployed agent does not spend a long reasoning budget on every
+   product selection. Extended thinking on is a different and more expensive agent than the
+   one this study is about.
+
+The runner records `thinking` and `max_tokens` on every row, so the configuration is
+visible in the dataset rather than only in this document. `--thinking` re-enables it for
+anyone who wants to run the comparison the other way; we would expect a persuadable effect
+to *shrink* under deliberation, and that is a worthwhile follow-up, not this study.
+
+**What this does not change:** the arms, the choice sets, the randomization, the estimator,
+the stopping rule, or the withdrawal condition in §7.
