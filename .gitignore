@@ -3,3 +3,6 @@ __pycache__/
 *.pyc
 gamma/catalog.json
 gamma/results_gamma_*_dry.jsonl
+.env
+.env.*
+*.env
