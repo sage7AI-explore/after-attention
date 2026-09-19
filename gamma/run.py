@@ -136,7 +136,7 @@ def main():
                       f"{n:,} calls completed, design incomplete.")
                 break
 
-            rng = random.Random(hash((s["set_id"], arm, f, rep)) & 0xFFFFFFFF)
+            rng = random.Random(catalog.seed_for(s["set_id"], arm, f, rep))
             prompt, positions = catalog.prompt(s, arm, f, rng)
 
             text, tin, tout, err = None, 0, 0, None

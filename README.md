@@ -94,10 +94,45 @@ Values are averages over the final 10 of 40 iterations. The runner averages acro
 - **`gamma` is a stylized parameter, not a measurement.** No published estimate of the persuadability
   of a deployed shopping agent exists. Measuring it is the paper's main open problem (§10).
 
+## Measuring γ
+
+`gamma/` holds the harness for the empirical piece: estimating how far agent-directed text moves
+a real shopping agent's choice. `gamma/PREREGISTRATION.md` was committed before any API call and
+states the hypotheses, the three-arm design, the estimator, the stopping rule and — in §7 — the
+result that would make us withdraw the persuadability mechanism from the paper.
+
+```bash
+python3 gamma/pricing.py                                        # projected cost per model
+python3 gamma/run.py --model claude-sonnet-5 --dry-run           # whole pipeline, zero cost
+python3 gamma/estimate.py gamma/results_gamma_*_dry.jsonl        # estimator on stub data
+```
+
+Live runs read keys from the environment (`ANTHROPIC_API_KEY`, `OPENAI_API_KEY`, `GEMINI_API_KEY`),
+never from a file in the repo and never from an argument:
+
+```bash
+python3 gamma/run.py --model claude-sonnet-5  --cap 50
+```
+
+The runner refuses to start if its pre-flight projection exceeds the cap, ledgers actual spend from
+the token counts the APIs report, and hard-stops at 90% of the cap with partial results written.
+Runs resume: re-running the same command continues rather than re-spending.
+
+**Three arms, not two.** A is attested facts only; B adds agent-directed persuasion; C adds neutral
+filler of the same length. The quantity that carries the paper's claim is **B − C**, not B − A —
+without the length placebo, a text-volume effect would be misread as persuasion.
+
+**A note on determinism.** Product order is randomized per call from `catalog.seed_for()`, which is
+integer arithmetic rather than `hash()`. Python salts string hashing per process, so a `hash()`-based
+seed makes the runner and the estimator disagree about which permutation was shown, silently
+corrupting the position control. `estimate.py` re-derives each permutation and raises if it does not
+match the position the runner recorded.
+
 ## Layout
 
 ```
 sim/        sim2.py (harness), plot2.py, plot_phase.py, legacy/sim.py
+gamma/      catalog.py, run.py, estimate.py, pricing.py, PREREGISTRATION.md
 results/    .jsonl output, one line per run
 figures/    generated figures
 paper/      the current draft PDF

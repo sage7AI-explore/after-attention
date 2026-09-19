@@ -121,6 +121,16 @@ def render(choice_set, arm, rng):
     return "\n".join(lines), positions
 
 
+def seed_for(set_id, arm, framing, rep):
+    """Deterministic per-call seed.
+
+    Must NOT use hash(): Python salts string hashing per process, so the runner and
+    the estimator would draw different permutations and the position control would be
+    silently wrong. This is arithmetic on small integers and is stable across
+    processes, machines and Python versions."""
+    return (((set_id * 7 + "ABC".index(arm)) * 13 + framing) * 97 + rep) % (2 ** 32)
+
+
 FRAMINGS = [
     "Buy the best one.",
     "Choose the product that offers the best value for money.",

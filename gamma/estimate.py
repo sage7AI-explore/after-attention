@@ -18,7 +18,6 @@ range under stated normalizations is given rather than a single number.
 """
 import json, sys, collections
 import numpy as np
-from scipy.optimize import minimize
 
 import catalog
 
@@ -44,7 +43,8 @@ def design(rows, sets):
         # positions are recorded only for the target; reconstruct the rest deterministically
         # from the same rng the runner used
         import random
-        rng = random.Random(hash((r["set_id"], r["arm"], r["framing"], r["rep"])) & 0xFFFFFFFF)
+        rng = random.Random(
+            catalog.seed_for(r["set_id"], r["arm"], r["framing"], r["rep"]))
         _, positions = catalog.render(s, r["arm"], rng)
         # the runner recorded the target's position independently; if the replayed
         # permutation disagrees, the position control is silently wrong and every
@@ -69,45 +69,67 @@ def design(rows, sets):
     return X, np.array(y), np.array(clusters)
 
 
-def negll(b, X, y):
-    tot = 0.0
+def _probs(b, Xi):
+    u = Xi @ b
+    u -= u.max()
+    p = np.exp(u)
+    return p / p.sum()
+
+
+def gradient(b, X, y):
+    """Analytic score: observed attributes minus expected attributes, summed."""
+    g = np.zeros(len(b))
     for Xi, yi in zip(X, y):
-        u = Xi @ b
-        u -= u.max()
-        tot -= u[yi] - np.log(np.exp(u).sum())
-    return tot
+        g += Xi[yi] - _probs(b, Xi) @ Xi
+    return g
 
 
 def scores(b, X, y):
     """Per-observation score vectors, for the clustered sandwich."""
-    out = []
-    for Xi, yi in zip(X, y):
-        u = Xi @ b
-        u -= u.max()
-        p = np.exp(u); p /= p.sum()
-        out.append(Xi[yi] - p @ Xi)
-    return np.array(out)
+    return np.array([Xi[yi] - _probs(b, Xi) @ Xi for Xi, yi in zip(X, y)])
 
 
-def hessian(b, X, y, eps=1e-5):
+def hessian(b, X, y):
+    """Analytic negative Hessian of the log-likelihood (the information matrix)."""
     k = len(b)
     H = np.zeros((k, k))
-    g0 = scores(b, X, y).sum(0)
-    for j in range(k):
-        bj = b.copy(); bj[j] += eps
-        H[:, j] = (scores(bj, X, y).sum(0) - g0) / eps
-    return -(H + H.T) / 2
+    for Xi in X:
+        p = _probs(b, Xi)
+        xbar = p @ Xi
+        H += (Xi * p[:, None]).T @ Xi - np.outer(xbar, xbar)
+    return H
 
 
-def fit(rows, sets):
+def loglik(b, X, y):
+    return float(sum(np.log(_probs(b, Xi)[yi]) for Xi, yi in zip(X, y)))
+
+
+def fit(rows, sets, tol=1e-9, max_iter=50):
+    """Conditional logit by Newton-Raphson. No scipy: the gradient and Hessian are
+    analytic, so this converges in a handful of steps and needs numpy only."""
     X, y, cl = design(rows, sets)
     k = X[0].shape[1]
-    res = minimize(negll, np.zeros(k), args=(X, y), method="BFGS")
-    b = res.x
+    b = np.zeros(k)
+    ll = loglik(b, X, y)
+    for _ in range(max_iter):
+        g = gradient(b, X, y)
+        H = hessian(b, X, y)
+        step = np.linalg.solve(H + 1e-10 * np.eye(k), g)
+        # backtrack if a full Newton step overshoots
+        t_step = 1.0
+        for _ in range(30):
+            cand = b + t_step * step
+            ll_new = loglik(cand, X, y)
+            if ll_new >= ll:
+                break
+            t_step /= 2
+        if abs(ll_new - ll) < tol:
+            b, ll = cand, ll_new
+            break
+        b, ll = cand, ll_new
+
     S = scores(b, X, y)
-    H = hessian(b, X, y)
-    Hinv = np.linalg.pinv(H)
-    # cluster-robust sandwich
+    Hinv = np.linalg.pinv(hessian(b, X, y))
     meat = np.zeros((k, k))
     for c in np.unique(cl):
         sc = S[cl == c].sum(0)
