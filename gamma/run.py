@@ -20,13 +20,15 @@ Keys are read from the environment and never logged, printed or written to disk.
 Run `--dry-run` first: it exercises the whole pipeline against a stub client at zero cost.
 Run `diagnose.py` before any live sweep: it prints the real response shape for a cent.
 """
-import argparse, json, os, random, re, sys, time
+import argparse, collections, json, os, random, re, sys, threading, time
+from concurrent.futures import ThreadPoolExecutor
 import pricing, catalog
 
 STOP_FRACTION = 0.90
 CALIBRATE = 40          # calls checked before the sweep is allowed to continue
 MAX_FAIL_RATE = 0.25    # abort if more than this share of the calibration window failed
-MAX_CONSECUTIVE = 15    # abort after this many consecutive failures at any point
+RECENT_WINDOW = 50      # rolling window used instead of a consecutive count
+MAX_RECENT_FAIL = 0.60  # abort if this share of the last RECENT_WINDOW calls failed
 ARMS = ("A", "B", "C")
 
 
@@ -149,11 +151,20 @@ def call_google(model, prompt, key, max_tokens):
 
 def call_stub(model, prompt, key, max_tokens, thinking=True):
     """Zero-cost stub. Picks a product with a mild bias toward whatever line is longest,
-    so --dry-run exercises parsing, ledgering and analysis end to end."""
+    so --dry-run exercises parsing, ledgering and analysis end to end.
+
+    Draws from a Random seeded by the prompt, NOT from the global random module. Under
+    concurrency the global RNG is shared, so its draw order depends on thread
+    interleaving and the same cell yields a different pick between a serial and a
+    parallel run — which makes the dry run unreproducible and therefore useless as the
+    pipeline test. zlib.crc32 is used rather than hash(), which Python salts per process.
+    """
+    import zlib
+    rng = random.Random(zlib.crc32(prompt.encode()))
     ids = re.findall(r"^(P\d\d) \|", prompt, re.M)
     lines = {i: len(l) for l, i in
              ((l, l.split(" |")[0]) for l in prompt.split("\n") if re.match(r"^P\d\d \|", l))}
-    pick = max(ids, key=lambda i: lines[i] + random.random() * 60)
+    pick = max(ids, key=lambda i: lines[i] + rng.random() * 60)
     return pick, len(prompt) // 4, 4
 
 
@@ -169,6 +180,51 @@ def abort(msg, out, n, excluded):
     print( "  resume and become permanent holes in the design.")
     print( "  Then run:  python3 gamma/diagnose.py   to see the real response shape.")
     sys.exit(3)
+
+
+def run_one(job, a, spec, key, caller):
+    """Execute one call. Pure with respect to shared state: the RNG is seeded from
+    (set, arm, framing, rep), so a worker's result does not depend on execution order
+    and concurrency cannot change which permutation a cell was shown."""
+    s, arm, f, rep = job
+    rng = random.Random(catalog.seed_for(s["set_id"], arm, f, rep))
+    prompt, positions = catalog.prompt(s, arm, f, rng)
+
+    text, tin, tout, err = None, 0, 0, None
+    for attempt in range(4):
+        try:
+            if spec["provider"] == "anthropic" or a.dry_run:
+                text, tin, tout = caller(a.model, prompt, key, a.max_tokens,
+                                         thinking=not a.no_thinking)
+            else:
+                text, tin, tout = caller(a.model, prompt, key, a.max_tokens)
+            err = None               # a retry that succeeded is a success
+            break
+        except Exception as e:                                      # noqa: BLE001
+            err = f"{type(e).__name__}: {e}"[:200]
+            text = None
+            if attempt < 3:
+                # jittered backoff; concurrency makes rate limiting likely, and
+                # unjittered retries from several workers arrive together
+                time.sleep((2 ** attempt) + random.random())
+
+    choice = None
+    if text:
+        choice, perr = parse_choice(text, positions)
+        if perr and not err:
+            err = perr
+
+    row = dict(
+        model=a.model, max_tokens=a.max_tokens, thinking=(not a.no_thinking),
+        set_id=s["set_id"], arm=arm, framing=f, rep=rep,
+        choice=choice, raw=(text or "")[:40], error=err,
+        target_id=s["target_id"], best_value_id=s["best_value_id"],
+        target_position=positions[s["target_id"]],
+        chose_target=(choice == s["target_id"]) if choice else None,
+        chose_best_value=(choice == s["best_value_id"]) if choice else None,
+        in_tokens=tin, out_tokens=tout,
+        usd=round(pricing.cost(a.model, tin, tout), 6))
+    return row, (choice is not None), pricing.cost(a.model, tin, tout)
 
 
 # ----------------------------------------------------------------- runner
@@ -191,6 +247,10 @@ def main():
                          "configuration — the registration fixes provider defaults, and "
                          "all three providers deliberate by default. For the reverse "
                          "comparison only.")
+    ap.add_argument("--concurrency", type=int, default=8,
+                    help="parallel in-flight calls. Results do not depend on it: every "
+                         "cell seeds its own RNG from (set, arm, framing, rep). Raise it "
+                         "if the provider tolerates it; drop to 1 to reproduce serially.")
     ap.add_argument("--out", default=None)
     ap.add_argument("--dry-run", action="store_true", help="stub client, no network, no spend")
     a = ap.parse_args()
@@ -243,85 +303,67 @@ def main():
         print(f"resuming     {len(done):,} calls already recorded")
 
     caller = call_stub if a.dry_run else CALLERS[spec["provider"]]
-    spent, n, excluded, consecutive = 0.0, 0, 0, 0
-    calibrated = False
+    todo = [j for j in jobs if (j[0]["set_id"], j[1], j[2], j[3]) not in done]
+    if not todo:
+        print("nothing left to do"); return
+
+    spent, n, excluded = 0.0, 0, 0
+    recent = collections.deque(maxlen=RECENT_WINDOW)
+    lock = threading.Lock()
     t0 = time.time()
+    stop = False
+
+    print(f"concurrency  {a.concurrency} workers "
+          f"({'serial' if a.concurrency == 1 else 'order-independent: each cell is seeded from its own indices'})")
+    print()
 
     with open(out, "a") as fh:
-        for s, arm, f, rep in jobs:
-            if (s["set_id"], arm, f, rep) in done:
-                continue
+
+        def drain(chunk):
+            """Run one chunk and fold the results in. Returns False to stop the sweep."""
+            nonlocal spent, n, excluded, stop
+            with ThreadPoolExecutor(max_workers=a.concurrency) as ex:
+                for row, ok, usd in ex.map(lambda j: run_one(j, a, spec, key, caller), chunk):
+                    with lock:
+                        spent += usd
+                        n += 1
+                        recent.append(ok)
+                        if not ok:
+                            excluded += 1
+                        fh.write(json.dumps(row) + "\n")
+                        fh.flush()
+                        if n % 25 == 0:
+                            el = (time.time() - t0) / 60
+                            rate = n / max(time.time() - t0, 1e-9)
+                            eta = (len(todo) - n) / rate / 60 if rate else 0
+                            print(f"  {n:,}/{len(todo):,}  ${spent:,.2f}  "
+                                  f"({rate:.1f} calls/s, {excluded} excluded, "
+                                  f"{el:.1f}m elapsed, ~{eta:.0f}m left)", flush=True)
+            return True
+
+        # ---- 4. calibration window, run first and judged before the sweep commits
+        head, tail = todo[:CALIBRATE], todo[CALIBRATE:]
+        drain(head)
+        rate = excluded / max(n, 1)
+        print(f"\ncalibration  {n} calls, {excluded} failed ({rate:.0%}), ${spent:.4f} spent")
+        if rate > MAX_FAIL_RATE:
+            abort(f"{rate:.0%} of the first {n} calls produced no usable choice "
+                  f"(limit {MAX_FAIL_RATE:.0%}).", out, n, excluded)
+        print("             continuing\n")
+
+        # ---- the sweep, in chunks so the guards are checked between them
+        chunk_size = max(a.concurrency * 4, 25)
+        for i in range(0, len(tail), chunk_size):
             if spent >= STOP_FRACTION * a.cap:
                 print(f"\nSTOPPING at ${spent:,.2f} — {STOP_FRACTION:.0%} of the ${a.cap:.2f} cap. "
                       f"{n:,} calls completed, design incomplete.")
                 break
-
-            rng = random.Random(catalog.seed_for(s["set_id"], arm, f, rep))
-            prompt, positions = catalog.prompt(s, arm, f, rng)
-
-            text, tin, tout, err = None, 0, 0, None
-            for attempt in range(3):
-                try:
-                    if spec["provider"] == "anthropic" or a.dry_run:
-                        text, tin, tout = caller(a.model, prompt, key, a.max_tokens,
-                                                 thinking=not a.no_thinking)
-                    else:
-                        text, tin, tout = caller(a.model, prompt, key, a.max_tokens)
-                    err = None               # a retry that succeeded is a success
-                    break
-                except Exception as e:                      # noqa: BLE001
-                    err = f"{type(e).__name__}: {e}"[:200]
-                    text = None
-                    if attempt < 2:
-                        time.sleep(2 ** attempt)
-            spent += pricing.cost(a.model, tin, tout)
-            n += 1
-
-            choice = None
-            if text:
-                choice, perr = parse_choice(text, positions)
-                if perr and not err:
-                    err = perr
-            if choice is None:
-                excluded += 1
-                consecutive += 1
-            else:
-                consecutive = 0
-
-            fh.write(json.dumps(dict(
-                model=a.model, max_tokens=a.max_tokens,
-                thinking=(not a.no_thinking),
-                set_id=s["set_id"], arm=arm, framing=f, rep=rep,
-                choice=choice, raw=(text or "")[:40], error=err,
-                target_id=s["target_id"], best_value_id=s["best_value_id"],
-                target_position=positions[s["target_id"]],
-                chose_target=(choice == s["target_id"]) if choice else None,
-                chose_best_value=(choice == s["best_value_id"]) if choice else None,
-                in_tokens=tin, out_tokens=tout,
-                usd=round(pricing.cost(a.model, tin, tout), 6))) + "\n")
-            fh.flush()
-
-            # ---- 4. calibration window
-            if not calibrated and n >= CALIBRATE:
-                calibrated = True
-                rate = excluded / n
-                print(f"\ncalibration  {n} calls, {excluded} failed ({rate:.0%}), "
-                      f"${spent:.4f} spent")
-                if rate > MAX_FAIL_RATE:
-                    last = err or "see the error field in the output file"
-                    abort(f"{rate:.0%} of the first {n} calls produced no usable choice "
-                          f"(limit {MAX_FAIL_RATE:.0%}).\n  Last error: {last}", out, n, excluded)
-                print("             continuing\n")
-
-            # ---- 5. consecutive-failure trip
-            if consecutive >= MAX_CONSECUTIVE:
-                abort(f"{consecutive} consecutive calls produced no usable choice.\n"
-                      f"  Last error: {err or 'unknown'}", out, n, excluded)
-
-            if n % 100 == 0:
-                print(f"  {n:,}/{len(jobs) - len(done):,}  ${spent:,.2f}  "
-                      f"(${spent / n:.4f}/call, {excluded} excluded, "
-                      f"{(time.time() - t0) / 60:.1f}m)", flush=True)
+            if len(recent) == RECENT_WINDOW:
+                fail_rate = 1 - (sum(recent) / len(recent))
+                if fail_rate > MAX_RECENT_FAIL:
+                    abort(f"{fail_rate:.0%} of the last {RECENT_WINDOW} calls produced no "
+                          f"usable choice (limit {MAX_RECENT_FAIL:.0%}).", out, n, excluded)
+            drain(tail[i:i + chunk_size])
 
     print(f"\ncompleted    {n:,} calls")
     print(f"spent        ${spent:,.2f} of ${a.cap:.2f}")
