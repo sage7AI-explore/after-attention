@@ -63,23 +63,34 @@ def project(model, n_calls, in_tokens, out_tokens):
     return n_calls * cost(model, in_tokens * infl, out_tokens * infl)
 
 
-# Token counts MEASURED by diagnose.py on 19 September 2026, one call per provider on
-# arm B of choice set 0. Used for the cost projection only. They are a single sample
-# each and output length varies with how much the model deliberates, so treat the
-# projection as an estimate — the hard control is the live ledger against the cap,
-# which uses the counts the API actually reports for every call.
+# Mean token counts from the COMPLETED 6,000-call runs of 19 September 2026.
+#
+# These replace counts from a single diagnose.py call per provider. That probe put
+# gemini-3.8-flash at 60 output tokens; the real mean over 6,000 calls was 1,424, and the
+# projection it produced was 7.9x too low. One sample is not an estimate.
+#
+# gemini-3.8-flash is also listed at a higher figure for the context design, because its
+# 2,048-token ceiling was nearly binding in the base study (36% of calls within 150 tokens
+# of it, 15 truncations) and the context study lifts the ceiling, so its unconstrained
+# mean is expected to rise. The live ledger, not this table, is what enforces the cap.
 MEASURED = {
-    "claude-sonnet-5":  (922, 273),   # provider-default thinking on
-    "gpt-5.6-terra":    (618,  85),   # includes 64 reasoning tokens
-    "gemini-3.8-flash": (691,  60),   # 3 answer + 57 thought tokens
+    "claude-sonnet-5":  (923, 287),    # base study mean, n=6000, p95 out 537
+    "gpt-5.6-terra":    (598, 153),    # base study mean, n=6000, p95 out 356
+    "gemini-3.8-flash": (683, 1424),   # base study mean, n=6000, p95 out 1971 (ceiling-bound)
+}
+MEASURED_CONTEXT = {
+    "claude-sonnet-5":  (975, 310),
+    "gpt-5.6-terra":    (650, 170),
+    "gemini-3.8-flash": (735, 2400),   # ceiling lifted; allow for unconstrained deliberation
 }
 
 
-def expected(model, n_calls):
+def expected(model, n_calls, design="base"):
     """Projected spend from measured token counts, when we have them."""
-    if model not in MEASURED:
+    table = MEASURED_CONTEXT if design == "context" else MEASURED
+    if model not in table:
         return None
-    tin, tout = MEASURED[model]
+    tin, tout = table[model]
     return n_calls * cost(model, tin, tout)
 
 

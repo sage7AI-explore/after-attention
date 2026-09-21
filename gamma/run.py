@@ -22,7 +22,7 @@ Run `diagnose.py` before any live sweep: it prints the real response shape for a
 """
 import argparse, collections, json, os, random, re, sys, threading, time
 from concurrent.futures import ThreadPoolExecutor
-import pricing, catalog
+import pricing, catalog, context
 
 STOP_FRACTION = 0.90
 CALIBRATE = 40          # calls checked before the sweep is allowed to continue
@@ -187,8 +187,12 @@ def run_one(job, a, spec, key, caller):
     (set, arm, framing, rep), so a worker's result does not depend on execution order
     and concurrency cannot change which permutation a cell was shown."""
     s, arm, f, rep = job
-    rng = random.Random(catalog.seed_for(s["set_id"], arm, f, rep))
-    prompt, positions = catalog.prompt(s, arm, f, rng)
+    if a.design == "context":
+        rng = random.Random(context.seed_for(s["set_id"], arm, f, rep))
+        prompt, positions = context.prompt(s, arm, f, rng)
+    else:
+        rng = random.Random(catalog.seed_for(s["set_id"], arm, f, rep))
+        prompt, positions = catalog.prompt(s, arm, f, rng)
 
     text, tin, tout, err = None, 0, 0, None
     for attempt in range(4):
@@ -216,7 +220,10 @@ def run_one(job, a, spec, key, caller):
 
     row = dict(
         model=a.model, max_tokens=a.max_tokens, thinking=(not a.no_thinking),
+        design=a.design,
         set_id=s["set_id"], arm=arm, framing=f, rep=rep,
+        urgent=(context.CELLS[f][0] if a.design == "context" else None),
+        stakes=(context.CELLS[f][1] if a.design == "context" else None),
         choice=choice, raw=(text or "")[:40], error=err,
         target_id=s["target_id"], best_value_id=s["best_value_id"],
         target_position=positions[s["target_id"]],
@@ -235,7 +242,7 @@ def main():
     ap.add_argument("--sets", type=int, default=40)
     ap.add_argument("--reps", type=int, default=10)
     ap.add_argument("--framings", type=int, default=len(catalog.FRAMINGS))
-    ap.add_argument("--max-tokens", type=int, default=2048,
+    ap.add_argument("--max-tokens", type=int, default=None,
                     help="output budget per call. All three providers deliberate before "
                          "answering, and a small budget is consumed entirely by that "
                          "deliberation — 64 produced a 100%% failure on every provider.")
@@ -247,6 +254,10 @@ def main():
                          "configuration — the registration fixes provider defaults, and "
                          "all three providers deliberate by default. For the reverse "
                          "comparison only.")
+    ap.add_argument("--design", choices=("base", "context"), default="base",
+                    help="base: the original study (5 framings). context: the matched triad "
+                         "crossed with 2 urgency x 2 stakes cells, with a context-neutral "
+                         "placebo; see context.py.")
     ap.add_argument("--concurrency", type=int, default=8,
                     help="parallel in-flight calls. Results do not depend on it: every "
                          "cell seeds its own RNG from (set, arm, framing, rep). Raise it "
@@ -256,25 +267,37 @@ def main():
     a = ap.parse_args()
 
     spec = pricing.MODELS[a.model]
+    # base keeps the 2,048 it was run with, so it reproduces exactly. The context design
+    # lifts the ceiling: in the base study gemini-3.8-flash ran within 150 tokens of 2,048
+    # on 36% of calls and was truncated 15 times, and a stakes framing that prompts more
+    # deliberation would be truncated more in exactly the cells under test.
+    if a.max_tokens is None:
+        a.max_tokens = 8192 if a.design == "context" else 2048
     here = os.path.dirname(os.path.abspath(__file__))
     out = a.out or os.path.join(
-        here, f"results_gamma_{a.model.replace('.', '_')}{'_dry' if a.dry_run else ''}.jsonl")
+        here, f"results_gamma_{a.model.replace('.', '_')}"
+              f"{'_context' if a.design == 'context' else ''}{'_dry' if a.dry_run else ''}.jsonl")
 
-    sets = catalog.build(n_sets=a.sets)
+    if a.design == "context":
+        sets = context.build()[:a.sets]
+        a.framings = len(context.CELLS)   # the four context cells take the framing slot
+    else:
+        sets = catalog.build(n_sets=a.sets)
     jobs = [(s, arm, f, rep)
             for s in sets for arm in ARMS
             for f in range(a.framings) for rep in range(a.reps)]
 
     # ---- 1. pre-flight
-    measured = pricing.expected(a.model, len(jobs))
+    measured = pricing.expected(a.model, len(jobs), a.design)
     projected = measured if measured is not None else \
         pricing.project(a.model, len(jobs), 1300, a.expected_out)
     worst = pricing.project(a.model, len(jobs), 1300, a.max_tokens)
     print(f"model        {a.model}")
-    print(f"design       {len(sets)} sets x {len(ARMS)} arms x {a.framings} framings "
+    label = "context cells" if a.design == "context" else "framings"
+    print(f"design       {len(sets)} sets x {len(ARMS)} arms x {a.framings} {label} "
           f"x {a.reps} reps = {len(jobs):,} calls")
-    src = ("from tokens measured by diagnose.py" if measured is not None
-           else f"at {a.expected_out} output tokens/call (not measured)")
+    src = (f"from 6,000-call run means{' (context-adjusted)' if a.design == 'context' else ''}"
+           if measured is not None else f"at {a.expected_out} output tokens/call (not measured)")
     print(f"projected    ${projected:,.2f}   {src}")
     print(f"worst case   ${worst:,.2f}   if every call spent its full {a.max_tokens}-token budget")
     print(f"cap          ${a.cap:,.2f}   enforced on ACTUAL reported spend, not on either estimate")
@@ -309,6 +332,7 @@ def main():
 
     spent, n, excluded = 0.0, 0, 0
     recent = collections.deque(maxlen=RECENT_WINDOW)
+    out_tokens_seen = []
     lock = threading.Lock()
     t0 = time.time()
     stop = False
@@ -328,6 +352,7 @@ def main():
                         spent += usd
                         n += 1
                         recent.append(ok)
+                        out_tokens_seen.append(row["out_tokens"])
                         if not ok:
                             excluded += 1
                         fh.write(json.dumps(row) + "\n")
@@ -346,6 +371,21 @@ def main():
         drain(head)
         rate = excluded / max(n, 1)
         print(f"\ncalibration  {n} calls, {excluded} failed ({rate:.0%}), ${spent:.4f} spent")
+        near = sum(1 for o in out_tokens_seen if o >= 0.9 * a.max_tokens)
+        share = near / max(len(out_tokens_seen), 1)
+        mean_out = sum(out_tokens_seen) / max(len(out_tokens_seen), 1)
+        print(f"             mean output {mean_out:.0f} tokens; {share:.0%} of calls used "
+              f">=90% of the {a.max_tokens}-token ceiling")
+        if share > 0.05:
+            msg = (f"{share:.0%} of calibration calls reached 90% of the output ceiling. The "
+                   f"ceiling is close to binding, so truncation will exclude calls and may do so "
+                   f"differentially by condition. Raise --max-tokens and re-run.")
+            if a.design == "context":
+                abort(msg, out, n, excluded)
+            # The base study was run at this ceiling and is reported as run; re-running it
+            # must reproduce it rather than refuse. Flag the problem loudly instead.
+            print(f"\n  WARNING  {msg}\n  (base design continues so it reproduces as originally "
+                  f"run; see gamma/_failed_runs/README.md and the paper, section 8.5)\n")
         if rate > MAX_FAIL_RATE:
             abort(f"{rate:.0%} of the first {n} calls produced no usable choice "
                   f"(limit {MAX_FAIL_RATE:.0%}).", out, n, excluded)
@@ -368,6 +408,10 @@ def main():
     print(f"\ncompleted    {n:,} calls")
     print(f"spent        ${spent:,.2f} of ${a.cap:.2f}")
     print(f"excluded     {excluded:,} ({excluded / max(n, 1):.1%})")
+    if out_tokens_seen:
+        hit = sum(1 for o in out_tokens_seen if o >= a.max_tokens - 8)
+        print(f"at ceiling   {hit:,} calls ended within 8 tokens of the {a.max_tokens}-token "
+              f"ceiling (truncations, not model choices)")
     print(f"wrote        {out}")
 
 
