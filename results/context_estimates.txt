@@ -1,0 +1,48 @@
+observations 19,200   models: {'claude-sonnet-5': 9600, 'gpt-5.6-terra': 9600}
+
+=== claude-sonnet-5  (n=9,600) ===
+  value                     +2.3545  (se 0.2580, z +9.13)
+  value x urgent            -0.0556  (se 0.0558, z -1.00)
+  value x stakes            +0.2236  (se 0.2001, z +1.12)
+  target x B                +1.5508  (se 0.6268, z +2.47)
+  target x C                -0.8162  (se 0.7356, z -1.11)
+  target x B x urgent       +0.7551  (se 0.2336, z +3.23)
+  target x C x urgent       +0.4816  (se 0.4334, z +1.11)
+  target x B x stakes       +1.2157  (se 0.4998, z +2.43)
+  target x C x stakes       +1.4847  (se 0.3624, z +4.10)
+  position                  +0.0348  (se 0.0158, z +2.21)
+
+  H2' persuasion net of length      +2.3670  (se 0.8432, z +2.81)
+  H3  change under URGENCY          +0.2735  (se 0.4073, z +0.67)
+  H4  change under STAKES           -0.2690  (se 0.4027, z -0.67)
+
+  descriptive, target choice share by cell (urgent, stakes):
+    (0, 0)    A=0.003  B=0.048  C=0.004   best-value=0.552
+    (1, 0)    A=0.004  B=0.081  C=0.007   best-value=0.530
+    (0, 1)    A=0.010  B=0.087  C=0.014   best-value=0.593
+    (1, 1)    A=0.024  B=0.188  C=0.022   best-value=0.583
+
+=== gpt-5.6-terra  (n=9,600) ===
+  value                     +1.7312  (se 0.2013, z +8.60)
+  value x urgent            -0.0624  (se 0.0316, z -1.98)
+  value x stakes            +0.2422  (se 0.1096, z +2.21)
+  target x B                +2.5699  (se 0.4150, z +6.19)
+  target x C                +0.2666  (se 0.8207, z +0.32)
+  target x B x urgent       +0.2612  (se 0.0969, z +2.70)
+  target x C x urgent       +0.1691  (se 0.2660, z +0.64)
+  target x B x stakes       +1.1710  (se 0.2606, z +4.49)
+  target x C x stakes       +0.0132  (se 0.6602, z +0.02)
+  position                  -0.0398  (se 0.0201, z -1.98)
+
+  H2' persuasion net of length      +2.3032  (se 0.6912, z +3.33)
+  H3  change under URGENCY          +0.0921  (se 0.2571, z +0.36)
+  H4  change under STAKES           +1.1579  (se 0.6299, z +1.84)
+
+  descriptive, target choice share by cell (urgent, stakes):
+    (0, 0)    A=0.022  B=0.239  C=0.031   best-value=0.418
+    (1, 0)    A=0.026  B=0.229  C=0.029   best-value=0.398
+    (0, 1)    A=0.021  B=0.324  C=0.015   best-value=0.465
+    (1, 1)    A=0.007  B=0.470  C=0.030   best-value=0.430
+
+H3 is the test this study exists for. A null on H3 is reported as a null: it would mean
+agents are no more persuadable under urgency, which is a finding, not a failure.

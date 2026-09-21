@@ -1,0 +1,18 @@
+== claude-sonnet-5
+  H2p  est +2.3670 se 0.8432 z +2.81 p 0.0025
+       -> persuasion net of length, unhurried and routine: significant (one-sided-positive, p = 0.0025).
+  H3   est +0.2735 se 0.4073 z +0.67 p 0.2510
+       -> NULL. No detectable change in persuadability under urgency. This rules out an urgency effect of +1.0 or larger with 92% power. It does NOT rule out a moderate effect (power only 54% at +0.5), and must not be described as showing urgency does not matter.
+  H4   est -0.2690 se 0.4027 z -0.67 p 0.5041
+       -> change in persuasion net of length under HIGH STAKES: NOT significant (two-sided, p = 0.5041).
+== gpt-5.6-terra
+  H2p  est +2.3032 se 0.6912 z +3.33 p 0.0004
+       -> persuasion net of length, unhurried and routine: significant (one-sided-positive, p = 0.0004).
+  H3   est +0.0921 se 0.2571 z +0.36 p 0.3601
+       -> NULL. No detectable change in persuadability under urgency. This rules out an urgency effect of +1.0 or larger with 92% power. It does NOT rule out a moderate effect (power only 54% at +0.5), and must not be described as showing urgency does not matter.
+  H4   est +1.1579 se 0.6299 z +1.84 p 0.0660
+       -> change in persuasion net of length under HIGH STAKES: NOT significant (two-sided, p = 0.0660).
+
+registered secondary, value x urgent (two-sided, uncorrected):
+  claude-sonnet-5: -0.0556 (se 0.0558) z -1.00 p 0.319
+  gpt-5.6-terra: -0.0624 (se 0.0316) z -1.97 p 0.048
