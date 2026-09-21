@@ -324,3 +324,24 @@ significant.
 
 Claude's cap is raised from $50 because a $45 hard stop would have halted the run at about
 93% of the design, leaving it unbalanced. Projected total $80.54.
+
+### Protocol deviation — recorded 21 September 2026, before any context-study result was computed
+
+The run commands supplied to the operator omitted `--reps 20`, so the runner used its default
+of 10 repetitions. claude-sonnet-5 completed 4,800 calls (repetitions 0-9) instead of the
+registered 9,600; gpt-5.6-terra was part-way through repetitions 0-9 when the error was
+noticed. The operator was not at fault: the error was in the instructions.
+
+**Decision, made before any choice share, coefficient or contrast was computed:** complete
+both models to the registered 20 repetitions. The runner resumes, so repetitions 0-9 are kept
+and 10-19 added; resume was verified earlier to produce no duplicates and no holes. The
+registered analysis is then run once, on the complete 20-repetition design.
+
+The partial 10-repetition data will **not** be analysed on its own, before or after
+completion. Deciding whether to collect more data after inspecting a partial result is
+optional stopping, which inflates the false-positive rate; completing to the registered N
+regardless of what the partial data show is the only way to keep the registered error rates.
+
+At the time of writing, the only statistics computed on context-study data are row counts,
+repetition coverage, duplicate counts and the max_tokens setting — none of which depend on
+which offer was chosen.
