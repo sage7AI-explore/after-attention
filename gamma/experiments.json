@@ -2,35 +2,89 @@
   "_doc": "Single source of truth for every registered study. preflight.py checks a run command against this before any call is made, and interpret.py reads the committed outcome rules from it. The preregistration prose must agree with this file; if they disagree, this file is wrong and neither may be used until they are reconciled.",
   "base": {
     "registered": "2026-09-19",
-    "models": ["claude-sonnet-5", "gpt-5.6-terra", "gemini-3.8-flash"],
-    "sets": 40, "arms": 3, "levels": 5, "level_name": "framings", "reps": 10,
+    "models": [
+      "claude-sonnet-5",
+      "gpt-5.6-terra",
+      "gemini-3.8-flash"
+    ],
+    "sets": 40,
+    "arms": 3,
+    "levels": 5,
+    "level_name": "framings",
+    "reps": 10,
     "calls_per_model": 6000,
     "max_tokens": 2048,
-    "caps": {"claude-sonnet-5": 50, "gpt-5.6-terra": 50, "gemini-3.8-flash": 50},
+    "caps": {
+      "claude-sonnet-5": 50,
+      "gpt-5.6-terra": 50,
+      "gemini-3.8-flash": 50
+    },
     "status": "complete"
   },
   "context": {
     "registered": "2026-09-21",
-    "models": ["claude-sonnet-5", "gpt-5.6-terra"],
-    "sets": 40, "arms": 3, "levels": 4, "level_name": "context cells", "reps": 20,
+    "models": [
+      "claude-sonnet-5",
+      "gpt-5.6-terra"
+    ],
+    "sets": 40,
+    "arms": 3,
+    "levels": 4,
+    "level_name": "context cells",
+    "reps": 20,
     "calls_per_model": 9600,
     "max_tokens": 8192,
-    "caps": {"claude-sonnet-5": 60, "gpt-5.6-terra": 50},
-    "status": "running",
+    "caps": {
+      "claude-sonnet-5": 60,
+      "gpt-5.6-terra": 50
+    },
+    "status": "complete",
     "hypotheses": {
-      "H2p": {"contrast": [3, 4], "test": "one-sided-positive", "role": "replication",
-              "label": "persuasion net of length, unhurried and routine"},
-      "H3":  {"contrast": [5, 6], "test": "one-sided-positive", "role": "primary",
-              "label": "change in persuasion net of length under URGENCY",
-              "power": {"effect_1.0": 0.92, "effect_0.5": 0.54}},
-      "H4":  {"contrast": [7, 8], "test": "two-sided", "role": "secondary",
-              "label": "change in persuasion net of length under HIGH STAKES"}
+      "H2p": {
+        "contrast": [
+          3,
+          4
+        ],
+        "test": "one-sided-positive",
+        "role": "replication",
+        "label": "persuasion net of length, unhurried and routine"
+      },
+      "H3": {
+        "contrast": [
+          5,
+          6
+        ],
+        "test": "one-sided-positive",
+        "role": "primary",
+        "label": "change in persuasion net of length under URGENCY",
+        "power": {
+          "effect_1.0": 0.92,
+          "effect_0.5": 0.54
+        }
+      },
+      "H4": {
+        "contrast": [
+          7,
+          8
+        ],
+        "test": "two-sided",
+        "role": "secondary",
+        "label": "change in persuasion net of length under HIGH STAKES"
+      }
     },
     "outcome_rules": {
       "H3_positive": "Agents are MORE persuadable under urgency. This is the finding. It supports conditioning gate strictness on urgency.",
       "H3_null": "NULL. No detectable change in persuadability under urgency. This rules out an urgency effect of +1.0 or larger with 92% power. It does NOT rule out a moderate effect (power only 54% at +0.5), and must not be described as showing urgency does not matter.",
       "H3_negative": "Agents are LESS persuadable under urgency, contrary to the motivating hypothesis. Report as such."
     },
-    "forbidden_language": ["directionally", "suggestive", "trending", "approaching significance", "marginally significant", "hint of", "consistent with an effect"]
+    "forbidden_language": [
+      "directionally",
+      "suggestive",
+      "trending",
+      "approaching significance",
+      "marginally significant",
+      "hint of",
+      "consistent with an effect"
+    ]
   }
 }
