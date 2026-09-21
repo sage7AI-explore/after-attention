@@ -6,3 +6,4 @@ gamma/results_gamma_*_dry.jsonl
 .env
 .env.*
 *.env
+gamma/*.backup_before_prune.jsonl

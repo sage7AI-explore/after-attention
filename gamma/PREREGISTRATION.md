@@ -345,3 +345,24 @@ regardless of what the partial data show is the only way to keep the registered 
 At the time of writing, the only statistics computed on context-study data are row counts,
 repetition coverage, duplicate counts and the max_tokens setting — none of which depend on
 which offer was chosen.
+
+### Protocol note — 21 September 2026: API failures are not observations
+
+During the Claude context run, 48 calls returned HTTP 400 from the provider after four
+attempts and produced no model response (0 output tokens, empty text). The runner had
+recorded them as rows with no choice, which would have made them permanent holes on resume.
+They are not observations: no model saw the prompt and answered. They were moved,
+unchanged, to `results_gamma_claude-sonnet-5_context.api_errors.jsonl`, and those cells are
+re-run on resume.
+
+The rule, fixed now and applied to both models:
+
+- **Transport/provider failure** (no response after retries): logged to the sidecar and
+  retried. It cannot select on outcome, because no outcome was observed.
+- **Model exclusion** (a response that names no valid product, or is truncated): recorded
+  in the results file, counted as an exclusion, and **never** re-run. Re-running these
+  until they succeed would be optional stopping.
+- A provider refusal that retrying cannot fix (auth, or credit balance) now stops the run
+  immediately and prints the provider's message.
+
+The gpt-5.6-terra run had no failures of either kind and is unaffected.

@@ -60,6 +60,27 @@ def parse_choice(text, valid):
 
 
 # ----------------------------------------------------------------- providers
+class APIError(Exception):
+    """The provider refused the request. Carries the response body, which is where the
+    reason is (credit balance, auth, malformed request). No model response exists, so
+    this is not an observation and is never written to the results file."""
+    def __init__(self, status, body):
+        self.status, self.body = status, body
+        super().__init__(f"HTTP {status}: {body[:300]}")
+
+    @property
+    def fatal(self):
+        b = self.body.lower()
+        return (self.status in (401, 403)
+                or (self.status == 400 and any(w in b for w in
+                    ("credit balance", "billing", "quota", "insufficient"))))
+
+
+def _check(r):
+    if r.status_code >= 400:
+        raise APIError(r.status_code, r.text or "")
+
+
 def call_anthropic(model, prompt, key, max_tokens, thinking=True):
     """thinking=True leaves the provider default alone; False sends thinking: disabled.
 
@@ -85,7 +106,7 @@ def call_anthropic(model, prompt, key, max_tokens, thinking=True):
                       headers={"x-api-key": key, "anthropic-version": "2023-06-01",
                                "content-type": "application/json"},
                       json=payload, timeout=60)
-    r.raise_for_status()
+    _check(r)
     d = r.json()
     usage = d.get("usage", {})
     tin = usage.get("input_tokens", 0)
@@ -110,7 +131,7 @@ def call_openai(model, prompt, key, max_tokens):
                       json={"model": model, "max_completion_tokens": max_tokens,
                             "messages": [{"role": "user", "content": prompt}]},
                       timeout=60)
-    r.raise_for_status()
+    _check(r)
     d = r.json()
     usage = d.get("usage", {})
     tin = usage.get("prompt_tokens", 0)
@@ -131,7 +152,7 @@ def call_google(model, prompt, key, max_tokens):
         json={"contents": [{"parts": [{"text": prompt}]}],
               "generationConfig": {"maxOutputTokens": max_tokens}},
         timeout=60)
-    r.raise_for_status()
+    _check(r)
     d = r.json()
     u = d.get("usageMetadata", {})
     tin = u.get("promptTokenCount", 0)
@@ -173,12 +194,12 @@ CALLERS = dict(anthropic=call_anthropic, openai=call_openai, google=call_google)
 
 def abort(msg, out, n, excluded):
     print(f"\n{'=' * 74}\nABORTING: {msg}\n{'=' * 74}")
-    print(f"  {n:,} calls attempted, {excluded:,} produced no usable choice.")
-    print(f"  Partial output is in {out}.")
-    print( "  DELETE that file before re-running: the runner treats every recorded")
-    print( "  (set, arm, framing, rep) as done, so failed cells would be skipped on")
-    print( "  resume and become permanent holes in the design.")
-    print( "  Then run:  python3 gamma/diagnose.py   to see the real response shape.")
+    print(f"  {n:,} calls attempted this session, {excluded:,} produced no usable choice.")
+    print(f"  KEEP {out} — every row in it is a real model response.")
+    print( "  API failures are not in it; they are in the .api_errors.jsonl file beside it")
+    print( "  and are retried automatically when you resume.")
+    print( "  Model exclusions (bad or truncated answers) ARE in it and are never re-run:")
+    print( "  re-running them until they succeed would be optional stopping.")
     sys.exit(3)
 
 
@@ -204,8 +225,13 @@ def run_one(job, a, spec, key, caller):
                 text, tin, tout = caller(a.model, prompt, key, a.max_tokens)
             err = None               # a retry that succeeded is a success
             break
+        except APIError as e:
+            err = f"APIError: {e}"[:500]
+            text = None
+            if e.fatal:
+                return None, False, 0.0, e      # retrying cannot help; stop the run
         except Exception as e:                                      # noqa: BLE001
-            err = f"{type(e).__name__}: {e}"[:200]
+            err = f"{type(e).__name__}: {e}"[:500]
             text = None
             if attempt < 3:
                 # jittered backoff; concurrency makes rate limiting likely, and
@@ -231,7 +257,11 @@ def run_one(job, a, spec, key, caller):
         chose_best_value=(choice == s["best_value_id"]) if choice else None,
         in_tokens=tin, out_tokens=tout,
         usd=round(pricing.cost(a.model, tin, tout), 6))
-    return row, (choice is not None), pricing.cost(a.model, tin, tout)
+    if text is None and err:
+        # The call never produced a model response (network or provider failure after
+        # retries). Not an observation: logged to the sidecar and retried on resume.
+        return row, False, pricing.cost(a.model, tin, tout), "transport"
+    return row, (choice is not None), pricing.cost(a.model, tin, tout), None
 
 
 # ----------------------------------------------------------------- runner
@@ -303,6 +333,12 @@ def main():
     print(f"cap          ${a.cap:,.2f}   enforced on ACTUAL reported spend, not on either estimate")
     if spec["provider"] == "anthropic":
         print(f"thinking     {'DISABLED (not the preregistered configuration)' if a.no_thinking else 'provider default (on)'}")
+    import preflight
+    preflight.check(a.model, a.design, a.reps, a.sets, a.cap, a.max_tokens, dry_run=a.dry_run)
+    prior_usd, prior_n = preflight.cumulative_spend(out)
+    if prior_n:
+        print(f"already      {prior_n:,} rows, ${prior_usd:,.2f} spent in earlier sessions "
+              f"(cap applies to this session; cumulative ${prior_usd:,.2f} + this session)")
     if projected > a.cap:
         per = projected / max(len(jobs), 1)
         print(f"\nREFUSING TO START: projection exceeds the cap.\n"
@@ -341,14 +377,38 @@ def main():
           f"({'serial' if a.concurrency == 1 else 'order-independent: each cell is seeded from its own indices'})")
     print()
 
-    with open(out, "a") as fh:
+    fatal_err, api_failed = [None], [0]
+    errpath = out.replace(".jsonl", ".api_errors.jsonl")
+
+    def fatal_stop():
+        e = fatal_err[0]
+        print(f"\n{'=' * 74}\nSTOPPED: the provider refused the request (HTTP {e.status}).\n"
+              f"{'=' * 74}\n  {e.body[:400]}\n")
+        if "credit" in e.body.lower() or "billing" in e.body.lower():
+            print("  Your API credit balance is the likely cause. Add credit in the provider "
+                  "console, then\n  re-run the same command; it resumes where it stopped.")
+        elif e.status in (401, 403):
+            print("  The API key was rejected. Check the key in .env.local.")
+        print(f"\n  {out} is intact. Nothing needs deleting.")
+        sys.exit(3)
+
+    with open(out, "a") as fh, open(errpath, "a") as errfh:
 
         def drain(chunk):
             """Run one chunk and fold the results in. Returns False to stop the sweep."""
             nonlocal spent, n, excluded, stop
             with ThreadPoolExecutor(max_workers=a.concurrency) as ex:
-                for row, ok, usd in ex.map(lambda j: run_one(j, a, spec, key, caller), chunk):
+                for row, ok, usd, fail in ex.map(lambda j: run_one(j, a, spec, key, caller), chunk):
                     with lock:
+                        if isinstance(fail, APIError):
+                            stop = True
+                            fatal_err[0] = fail
+                            continue
+                        if fail == "transport":
+                            errfh.write(json.dumps(row) + "\n"); errfh.flush()
+                            api_failed[0] += 1
+                            n += 1; recent.append(False)
+                            continue
                         spent += usd
                         n += 1
                         recent.append(ok)
@@ -369,7 +429,8 @@ def main():
         # ---- 4. calibration window, run first and judged before the sweep commits
         head, tail = todo[:CALIBRATE], todo[CALIBRATE:]
         drain(head)
-        rate = excluded / max(n, 1)
+        if fatal_err[0]: fatal_stop()
+        rate = (excluded + api_failed[0]) / max(n, 1)
         print(f"\ncalibration  {n} calls, {excluded} failed ({rate:.0%}), ${spent:.4f} spent")
         near = sum(1 for o in out_tokens_seen if o >= 0.9 * a.max_tokens)
         share = near / max(len(out_tokens_seen), 1)
@@ -404,10 +465,13 @@ def main():
                     abort(f"{fail_rate:.0%} of the last {RECENT_WINDOW} calls produced no "
                           f"usable choice (limit {MAX_RECENT_FAIL:.0%}).", out, n, excluded)
             drain(tail[i:i + chunk_size])
+            if fatal_err[0]: fatal_stop()
 
     print(f"\ncompleted    {n:,} calls")
     print(f"spent        ${spent:,.2f} of ${a.cap:.2f}")
-    print(f"excluded     {excluded:,} ({excluded / max(n, 1):.1%})")
+    print(f"excluded     {excluded:,} ({excluded / max(n, 1):.1%})   model responses with no usable choice")
+    if api_failed[0]:
+        print(f"api failures {api_failed[0]:,}   no response; logged to {errpath}, retried on resume")
     if out_tokens_seen:
         hit = sum(1 for o in out_tokens_seen if o >= a.max_tokens - 8)
         print(f"at ceiling   {hit:,} calls ended within 8 tokens of the {a.max_tokens}-token "
