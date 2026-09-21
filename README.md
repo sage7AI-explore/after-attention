@@ -147,8 +147,8 @@ The PDF is generated from the markdown source, not hand-assembled:
 python3 paper/build_pdf.py        # run from the repository root
 ```
 
-It reads `paper/After_Attention_draft_v0.9.md` and the two figures in `figures/`, and writes
-`paper/After_Attention_draft_v0.9.pdf` (21 pages). `CHANGELOG.md` records every draft revision,
+It reads `paper/After_Attention_draft_v0.10.md` and the two figures in `figures/`, and writes
+`paper/After_Attention_draft_v0.10.pdf` (21 pages). `CHANGELOG.md` records every draft revision,
 including the 95% misallocation result that was reported in an earlier version and later
 withdrawn.
 

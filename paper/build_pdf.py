@@ -8,8 +8,8 @@ from reportlab.lib.enums import TA_JUSTIFY, TA_CENTER
 from reportlab.platypus import (BaseDocTemplate, PageTemplate, Frame, Paragraph,
                                 Spacer, Table, TableStyle, Image, KeepTogether)
 
-SRC = "paper/After_Attention_draft_v0.9.md"
-OUT = "paper/After_Attention_draft_v0.9.pdf"
+SRC = "paper/After_Attention_draft_v0.10.md"
+OUT = "paper/After_Attention_draft_v0.10.pdf"
 FIG = "figures/fig_outcomes_v2.png"
 RUNNING = "After Attention: The Economics of Markets Where the Buyer Is an Agent"
 

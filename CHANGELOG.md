@@ -3,6 +3,30 @@
 Versioning rule: any fix to a delivered file gets a new version number. Earlier versions stay in
 the folder rather than being overwritten.
 
+## v0.10 — 21 Sep 2026
+
+Two additions, both qualifying our own argument rather than strengthening it, prompted by
+Sid asking whether the mechanism promotes fairness and whether it accounts for the context
+in which an agent understands its user.
+
+**Section 9: verification has a cost structure, and it concentrates.** The paper recommends
+verifiable claims as the value-routing substitute for advertising while treating attestation
+as costless. It is not. A test result or conformance assessment costs about the same for a
+seller with ten products as for one with ten thousand, so a regime admitting only fully
+verified claims excludes small and new sellers for reasons unrelated to the truth of their
+claims — invisibly, since the buyer simply sees fewer offers. That is a second concentrating
+channel on top of the one measured in section 7, and it means the remedy can be
+self-defeating depending on how the burden is distributed.
+
+**Section 8.5: the measurement is context-free.** All five framings ask the agent to choose
+well; none conveys urgency, stakes, or which attribute the principal relies upon. There is a
+specific reason to expect an interaction rather than an additive effect: an agent under time
+pressure has more reason to lean on what a listing asserts. If persuadability rises with
+urgency, agents are least robust exactly where a bad choice is hardest to undo — a worse
+finding than the one reported. The design extends to test it and we have not run it.
+
+Limitations 9 and 10 added correspondingly. 24 pages; verified clean.
+
 ## v0.9 — 19 Sep 2026
 
 **Gamma is measured. New section 8.** 18,000 preregistered purchase decisions across three
