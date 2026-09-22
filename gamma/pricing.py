@@ -39,6 +39,10 @@ MODELS = {
     "gemini-3.5-flash-lite": dict(
         provider="google", input=0.30, output=2.50, inflation=1.00,
         env="GEMINI_API_KEY", doubles_2027=True),
+    # Open-weight models executed locally through Ollama. No per-token price; the cap is
+    # irrelevant, but the ledger still records token counts.
+    "gemma4:12b": dict(provider="ollama", input=0.0, output=0.0, inflation=1.00, env=None),
+    "gemma4:e4b": dict(provider="ollama", input=0.0, output=0.0, inflation=1.00, env=None),
 }
 
 

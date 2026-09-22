@@ -170,6 +170,48 @@ def call_google(model, prompt, key, max_tokens):
     return text, tin, tout
 
 
+OLLAMA = os.environ.get("OLLAMA_HOST", "http://localhost:11434").rstrip("/")
+if not OLLAMA.startswith("http"):
+    OLLAMA = "http://" + OLLAMA
+
+
+def ollama_config(model):
+    """The identity of a locally executed model is its weights and settings, not its name.
+    Returns the digest Ollama reports for the pulled weights plus the quantization and
+    parameter details, so every row can be tied to exactly what ran."""
+    import requests
+    tags = requests.get(f"{OLLAMA}/api/tags", timeout=30).json().get("models", [])
+    m = next((t for t in tags if t.get("name") == model or t.get("model") == model), None)
+    if m is None:
+        raise SystemExit(f"\n{model} is not pulled in Ollama. Run:  ollama pull {model}")
+    show = requests.post(f"{OLLAMA}/api/show", json={"model": model}, timeout=60).json()
+    det = show.get("details", {}) or m.get("details", {})
+    return dict(digest=m.get("digest"), quantization=det.get("quantization_level"),
+                parameter_size=det.get("parameter_size"), family=det.get("family"),
+                modelfile_parameters=(show.get("parameters") or "").strip()[:300])
+
+
+def call_ollama(model, prompt, key, max_tokens):
+    """Local open-weight model through Ollama's chat endpoint. Provider defaults are kept
+    (no temperature or thinking override), matching the hosted runs; only the output
+    budget is set, and the context window is set large enough that the ~1,300-token
+    prompt plus the budget cannot be silently truncated."""
+    import requests
+    r = requests.post(f"{OLLAMA}/api/chat",
+                      json={"model": model, "stream": False,
+                            "messages": [{"role": "user", "content": prompt}],
+                            "options": {"num_predict": max_tokens, "num_ctx": 8192}},
+                      timeout=900)
+    _check(r)
+    d = r.json()
+    tin = d.get("prompt_eval_count", 0)
+    tout = d.get("eval_count", 0)
+    text = (d.get("message") or {}).get("content") or None
+    if not text:
+        raise CallFailed(f"no content (done_reason={d.get('done_reason')!r}, out_tokens={tout})")
+    return text, tin, tout
+
+
 def call_stub(model, prompt, key, max_tokens, thinking=True):
     """Zero-cost stub. Picks a product with a mild bias toward whatever line is longest,
     so --dry-run exercises parsing, ledgering and analysis end to end.
@@ -189,7 +231,7 @@ def call_stub(model, prompt, key, max_tokens, thinking=True):
     return pick, len(prompt) // 4, 4
 
 
-CALLERS = dict(anthropic=call_anthropic, openai=call_openai, google=call_google)
+CALLERS = dict(anthropic=call_anthropic, openai=call_openai, google=call_google, ollama=call_ollama)
 
 
 def abort(msg, out, n, excluded):
@@ -256,7 +298,8 @@ def run_one(job, a, spec, key, caller):
         chose_target=(choice == s["target_id"]) if choice else None,
         chose_best_value=(choice == s["best_value_id"]) if choice else None,
         in_tokens=tin, out_tokens=tout,
-        usd=round(pricing.cost(a.model, tin, tout), 6))
+        usd=round(pricing.cost(a.model, tin, tout), 6),
+        config_digest=getattr(a, "config_digest", None))
     if text is None and err:
         # The call never produced a model response (network or provider failure after
         # retries). Not an observation: logged to the sidecar and retried on resume.
@@ -284,7 +327,7 @@ def main():
                          "configuration — the registration fixes provider defaults, and "
                          "all three providers deliberate by default. For the reverse "
                          "comparison only.")
-    ap.add_argument("--design", choices=("base", "context"), default="base",
+    ap.add_argument("--design", choices=("base", "base_local", "context"), default="base",
                     help="base: the original study (5 framings). context: the matched triad "
                          "crossed with 2 urgency x 2 stakes cells, with a context-neutral "
                          "placebo; see context.py.")
@@ -305,7 +348,7 @@ def main():
         a.max_tokens = 8192 if a.design == "context" else 2048
     here = os.path.dirname(os.path.abspath(__file__))
     out = a.out or os.path.join(
-        here, f"results_gamma_{a.model.replace('.', '_')}"
+        here, f"results_gamma_{a.model.replace('.', '_').replace(':', '_')}"
               f"{'_context' if a.design == 'context' else ''}{'_dry' if a.dry_run else ''}.jsonl")
 
     if a.design == "context":
@@ -347,7 +390,14 @@ def main():
         sys.exit(2)
 
     key = "stub"
-    if not a.dry_run:
+    config = None
+    if spec["provider"] == "ollama" and not a.dry_run:
+        config = ollama_config(a.model)
+        print(f"weights      digest {config['digest']}  quant {config['quantization']}  "
+              f"size {config['parameter_size']}")
+        key = "local"
+        a.config_digest = config["digest"]
+    elif not a.dry_run:
         key = os.environ.get(spec["env"], "")
         if not key:
             print(f"\n{spec['env']} is not set. Export it in this shell; it is never logged "
@@ -459,6 +509,10 @@ def main():
                 print(f"\nSTOPPING at ${spent:,.2f} — {STOP_FRACTION:.0%} of the ${a.cap:.2f} cap. "
                       f"{n:,} calls completed, design incomplete.")
                 break
+            if config and ollama_config(a.model)["digest"] != config["digest"]:
+                abort("the local model's weights changed during the run (digest differs). "
+                      "Rows before and after would come from different configurations.",
+                      out, n, excluded)
             if len(recent) == RECENT_WINDOW:
                 fail_rate = 1 - (sum(recent) / len(recent))
                 if fail_rate > MAX_RECENT_FAIL:

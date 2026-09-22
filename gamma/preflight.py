@@ -71,7 +71,8 @@ if __name__ == "__main__":
     # self-test: the exact commands that were, and should have been, run
     cases = [
         ("the command actually issued (missing --reps 20)", "claude-sonnet-5", "context", 10, 40, 60, 8192, True),
-        ("the correct command",                             "claude-sonnet-5", "context", 20, 40, 60, 8192, False),
+        ("context study re-run after it was closed",        "claude-sonnet-5", "context", 20, 40, 60, 8192, True),
+        ("the correct local replication command",           "gemma4:12b",      "base_local", 10, 40, 1, 2048, False),
         ("cap too low for the design",                      "claude-sonnet-5", "context", 20, 40, 50, 8192, True),
         ("unregistered model",                              "gemini-3.8-flash","context", 20, 40, 50, 8192, True),
         ("live run against the closed base study",          "claude-sonnet-5", "base",    10, 40, 50, 2048, True),
