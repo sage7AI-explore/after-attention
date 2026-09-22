@@ -438,3 +438,15 @@ length appears **in an open-weight model answering directly**, not in an identic
 configured one. The paper will say so. It will not treat a difference between this model and
 the hosted three as evidence about reasoning, because this design does not vary reasoning
 within any model.
+
+### Protocol note — 22 September 2026: local runtime cache (performance only)
+
+During the first calls, the Ollama runtime's prompt cache stored 200-600 MB of state per
+prompt in system memory, growing toward an 8 GB limit. Every prompt in this design differs,
+so the runtime reported it could not reuse the cache and reprocessed each prompt in full.
+The cache therefore consumed memory without being used, and prompt reading slowed to about
+45 tokens per second. The run was paused and the runtime restarted with its prompt cache
+disabled (`LLAMA_ARG_CACHE_RAM=0`), a known workaround for ollama/ollama issue 18264. This
+changes memory use and speed only. It does not change the weights (the digest is checked
+between chunks), the sampling settings, or any input to the model. Rows recorded before the
+pause are kept.
