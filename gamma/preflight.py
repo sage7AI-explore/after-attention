@@ -17,7 +17,7 @@ class PreflightError(SystemExit):
     pass
 
 
-def check(model, design, reps, sets, cap, max_tokens, dry_run=False):
+def check(model, design, reps, sets, cap, max_tokens, dry_run=False, thinking=None):
     reg = json.load(open(os.path.join(HERE, "experiments.json")))
     if design not in reg:
         raise PreflightError(f"PREFLIGHT: design '{design}' is not registered in experiments.json")
@@ -35,6 +35,9 @@ def check(model, design, reps, sets, cap, max_tokens, dry_run=False):
         problems.append(f"--sets {sets} but '{design}' is registered at {e['sets']}")
     if max_tokens != e["max_tokens"]:
         problems.append(f"--max-tokens {max_tokens} but '{design}' is registered at {e['max_tokens']}")
+    if "thinking" in e and thinking is not None and thinking != e["thinking"]:
+        problems.append(f"thinking {'on' if thinking else 'off'} but '{design}' is registered with "
+                        f"thinking {'on' if e['thinking'] else 'off'}")
     want_cap = e["caps"].get(model)
     if want_cap is not None and cap < want_cap:
         problems.append(f"--cap {cap} is below the registered {want_cap}; the 90% hard stop "

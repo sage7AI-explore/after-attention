@@ -191,7 +191,7 @@ def ollama_config(model):
                 modelfile_parameters=(show.get("parameters") or "").strip()[:300])
 
 
-def call_ollama(model, prompt, key, max_tokens):
+def call_ollama(model, prompt, key, max_tokens, thinking=True):
     """Local open-weight model through Ollama's chat endpoint. Provider defaults are kept
     (no temperature or thinking override), matching the hosted runs; only the output
     budget is set, and the context window is set large enough that the ~1,300-token
@@ -200,6 +200,7 @@ def call_ollama(model, prompt, key, max_tokens):
     r = requests.post(f"{OLLAMA}/api/chat",
                       json={"model": model, "stream": False,
                             "messages": [{"role": "user", "content": prompt}],
+                            **({} if thinking else {"think": False}),
                             "options": {"num_predict": max_tokens, "num_ctx": 8192}},
                       timeout=900)
     _check(r)
@@ -260,7 +261,7 @@ def run_one(job, a, spec, key, caller):
     text, tin, tout, err = None, 0, 0, None
     for attempt in range(4):
         try:
-            if spec["provider"] == "anthropic" or a.dry_run:
+            if spec["provider"] in ("anthropic", "ollama") or a.dry_run:
                 text, tin, tout = caller(a.model, prompt, key, a.max_tokens,
                                          thinking=not a.no_thinking)
             else:
@@ -323,7 +324,9 @@ def main():
                     help="typical output tokens per call, used for the cost projection. "
                          "The hard protection is the live ledger and the cap, not this.")
     ap.add_argument("--no-thinking", dest="no_thinking", action="store_true",
-                    help="Anthropic only: send thinking: disabled. NOT the preregistered "
+                    help="Anthropic: send thinking: disabled (NOT the preregistered hosted "
+                         "configuration). Ollama: send think=false, as registered for base_local. "
+                         "Hosted: NOT the preregistered "
                          "configuration — the registration fixes provider defaults, and "
                          "all three providers deliberate by default. For the reverse "
                          "comparison only.")
@@ -377,7 +380,8 @@ def main():
     if spec["provider"] == "anthropic":
         print(f"thinking     {'DISABLED (not the preregistered configuration)' if a.no_thinking else 'provider default (on)'}")
     import preflight
-    preflight.check(a.model, a.design, a.reps, a.sets, a.cap, a.max_tokens, dry_run=a.dry_run)
+    preflight.check(a.model, a.design, a.reps, a.sets, a.cap, a.max_tokens, dry_run=a.dry_run,
+                    thinking=(not a.no_thinking))
     prior_usd, prior_n = preflight.cumulative_spend(out)
     if prior_n:
         print(f"already      {prior_n:,} rows, ${prior_usd:,.2f} spent in earlier sessions "
@@ -491,12 +495,17 @@ def main():
             msg = (f"{share:.0%} of calibration calls reached 90% of the output ceiling. The "
                    f"ceiling is close to binding, so truncation will exclude calls and may do so "
                    f"differentially by condition. Raise --max-tokens and re-run.")
-            if a.design == "context":
+            if a.design in ("context", "base_local"):
                 abort(msg, out, n, excluded)
             # The base study was run at this ceiling and is reported as run; re-running it
             # must reproduce it rather than refuse. Flag the problem loudly instead.
             print(f"\n  WARNING  {msg}\n  (base design continues so it reproduces as originally "
                   f"run; see gamma/_failed_runs/README.md and the paper, section 8.5)\n")
+        if a.design == "base_local" and mean_out > 200:
+            abort(f"mean output is {mean_out:.0f} tokens over calibration. A bare product ID is "
+                  f"under 10; the model is almost certainly still reasoning before answering, "
+                  f"so think=false was not honored. At local speeds the run is not feasible.",
+                  out, n, excluded)
         if rate > MAX_FAIL_RATE:
             abort(f"{rate:.0%} of the first {n} calls produced no usable choice "
                   f"(limit {MAX_FAIL_RATE:.0%}).", out, n, excluded)

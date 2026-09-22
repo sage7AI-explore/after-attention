@@ -103,7 +103,7 @@
       "gemma4:12b": 1
     },
     "status": "registered",
-    "runtime": "Ollama on the principal's own computer; provider defaults for sampling and thinking; num_ctx 8192; weights digest recorded per row and checked between chunks",
+    "runtime": "Ollama on the principal's own computer; think=false (amendment of 22 Sep, before any data); other sampling at model defaults (temp 1.0, top_k 64, top_p 0.95); num_ctx 8192; weights digest recorded per row and checked between chunks",
     "hypotheses": {
       "H1": {
         "contrast": "target x B",
@@ -137,6 +137,7 @@
       "marginally significant",
       "hint of",
       "consistent with an effect"
-    ]
+    ],
+    "thinking": false
   }
 }

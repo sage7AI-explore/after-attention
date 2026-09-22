@@ -415,3 +415,26 @@ smaller effect might not be, and a null would not rule one out.
 
 ### Cost
 $0 in API spend. Local compute only.
+
+### Amendment to the local replication — 22 September 2026, before any data
+
+**What happened.** The run was started at 17:24 UTC with provider defaults, as registered.
+Gemma 4 reasons before answering by default. The first call was still generating after more
+than 1,450 tokens of reasoning, at about 2.9 tokens per second on the author's computer
+(Apple M2, 24 GB). That is about eight minutes per call, or roughly a month for 6,000 calls.
+The run was stopped before its first call completed. **No row was written; the results file
+is empty.**
+
+**Change.** The model is run with `think=false`, sent through Ollama on every call.
+Everything else is unchanged: the model and its weights digest, the design, the sampling
+defaults (temperature 1.0, top_k 64, top_p 0.95), the output budget, the estimator, and the
+hypotheses and outcome rules. `preflight.py` enforces the setting: the runner refuses to
+start without `--no-thinking` for this design. The runner also aborts at calibration if mean
+output exceeds 200 tokens, which would mean the setting was not honored.
+
+**What this costs the comparison.** The hosted models ran with their default reasoning on.
+This model runs with reasoning off. So the local replication tests whether persuasion net of
+length appears **in an open-weight model answering directly**, not in an identically
+configured one. The paper will say so. It will not treat a difference between this model and
+the hosted three as evidence about reasoning, because this design does not vary reasoning
+within any model.
