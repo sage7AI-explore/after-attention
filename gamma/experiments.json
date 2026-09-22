@@ -86,5 +86,57 @@
       "hint of",
       "consistent with an effect"
     ]
+  },
+  "base_local": {
+    "registered": "2026-09-22",
+    "models": [
+      "gemma4:12b"
+    ],
+    "sets": 40,
+    "arms": 3,
+    "levels": 5,
+    "level_name": "framings",
+    "reps": 10,
+    "calls_per_model": 6000,
+    "max_tokens": 2048,
+    "caps": {
+      "gemma4:12b": 1
+    },
+    "status": "registered",
+    "runtime": "Ollama on the principal's own computer; provider defaults for sampling and thinking; num_ctx 8192; weights digest recorded per row and checked between chunks",
+    "hypotheses": {
+      "H1": {
+        "contrast": "target x B",
+        "test": "one-sided-positive",
+        "role": "replication",
+        "label": "persuasion (B vs attested)"
+      },
+      "H2": {
+        "contrast": "B - C",
+        "test": "one-sided-positive",
+        "role": "primary",
+        "label": "persuasion net of length on a locally executed open-weight model"
+      },
+      "L": {
+        "contrast": "target x C",
+        "test": "two-sided",
+        "role": "secondary",
+        "label": "text-volume (length) effect"
+      }
+    },
+    "outcome_rules": {
+      "H2_positive": "Persuasion net of length replicates on a locally executed open-weight model. The effect is not specific to hosted frontier models.",
+      "H2_null": "NULL on this configuration (gemma4:12b at the recorded digest). It does not contradict the three hosted results; it is reported as a null for this model only.",
+      "H2_negative": "The locally executed model is LESS likely to choose the target under persuasion than under the length-matched placebo. Reported as such."
+    },
+    "forbidden_language": [
+      "directionally",
+      "suggestive",
+      "trending",
+      "approaching significance",
+      "marginally significant",
+      "hint of",
+      "consistent with an effect"
+    ]
   }
 }

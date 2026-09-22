@@ -366,3 +366,52 @@ The rule, fixed now and applied to both models:
   immediately and prints the provider's message.
 
 The gpt-5.6-terra run had no failures of either kind and is unaffected.
+
+---
+
+## Amendment — 22 September 2026: local open-weight replication (gemma4:12b)
+
+**Committed before any call of this study was made.**
+
+### Why
+The three agents in the base study are hosted frontier models reached through their
+providers' APIs. Purchasing agents will also run on open-weight models executed locally, on
+a laptop, a phone, or a store terminal, by parties who can change the weights, the
+quantization, and the sampling settings. Whether persuasion net of length appears on such a
+model is an open question, and the answer bears on whether certification can be confined to
+hosted providers.
+
+### Design
+Identical to the base study: 40 choice sets x 3 arms x 5 framings x 10 repetitions =
+**6,000 calls**, the same catalog, the same placebo sentences, the same strict response form,
+the same 2,048-token output budget, the same estimator (`estimate.py`), and the same
+position replay check.
+
+- **Model:** `gemma4:12b`, executed through Ollama on the author's own computer. If the
+  computer cannot hold it, `gemma4:e4b` will be substituted **by a further amendment
+  committed before any data**, and not after.
+- **Settings:** provider defaults for sampling and for any thinking behavior, as for the
+  hosted models. The context window is set to 8,192 tokens, so that the prompt plus the
+  output budget cannot be truncated silently.
+- **Identity:** the digest of the weights Ollama reports is recorded on every row. The runner
+  aborts if the digest changes during the run.
+
+### Hypotheses
+- **H1 (replication):** target x B > 0, one-sided.
+- **H2 (primary):** persuasion net of length, B - C > 0, one-sided.
+- **L (secondary):** the text-volume effect, target x C, two-sided.
+
+### What each outcome will mean — committed now
+- **H2 positive and significant:** persuasion net of length replicates on a locally executed
+  open-weight model; the effect is not specific to hosted frontier models.
+- **H2 null:** reported as a null for this configuration only. It does not contradict the
+  hosted results.
+- **H2 negative and significant:** reported as such.
+
+### Power
+The three hosted models showed H2 between +1.89 and +2.84, detected at z = 4.9 to 10.1 with
+this design. An effect of that size on this model would very likely be detected. A much
+smaller effect might not be, and a null would not rule one out.
+
+### Cost
+$0 in API spend. Local compute only.
