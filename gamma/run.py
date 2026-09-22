@@ -12,6 +12,10 @@ Failure control, which is a separate thing and was missing at first:
   4. A calibration window. The first CALIBRATE calls are checked before the sweep commits:
      if more than MAX_FAIL_RATE of them failed to produce a usable choice, the run aborts.
   5. A consecutive-failure trip. MAX_CONSECUTIVE failures in a row aborts.
+  Both of those count MODEL EXCLUSIONS only. A call that got no response at all is a
+  transport failure, not an observation (see PREREGISTRATION.md), so it is counted and
+  tripped separately by MAX_API_FAIL_RATE: a broken pipe stops the run, but it never
+  gets reported as the model failing to answer.
   Money is not the only thing a bad run spends. The first live attempt failed on 100% of
   calls for thirteen minutes at zero cost, because every guard watched dollars and none
   watched whether anything was being recorded. These two do.
@@ -29,6 +33,7 @@ CALIBRATE = 40          # calls checked before the sweep is allowed to continue
 MAX_FAIL_RATE = 0.25    # abort if more than this share of the calibration window failed
 RECENT_WINDOW = 50      # rolling window used instead of a consecutive count
 MAX_RECENT_FAIL = 0.60  # abort if this share of the last RECENT_WINDOW calls failed
+MAX_API_FAIL_RATE = 0.10  # stop if this share of calls got no response at all (transport)
 ARMS = ("A", "B", "C")
 
 
@@ -235,6 +240,20 @@ def call_stub(model, prompt, key, max_tokens, thinking=True):
 CALLERS = dict(anthropic=call_anthropic, openai=call_openai, google=call_google, ollama=call_ollama)
 
 
+def transport_stop(msg, out, n, api_failed):
+    """Stop because the calls are not reaching the model. This is NOT a statement about
+    the model's answers: no observation was produced, so nothing here bears on the
+    hypotheses. Resuming re-runs exactly these calls."""
+    print(f"\n{'=' * 74}\nSTOPPING: {msg}\n{'=' * 74}")
+    print(f"  {api_failed:,} of {n:,} calls this session got no response from the server.")
+    print( "  These are transport failures, not model answers. They are NOT observations:")
+    print( "  none of them is in the results file and none counts toward any exclusion rate.")
+    print(f"  KEEP {out} — every row in it is a real model response.")
+    print( "  The failed calls are in the .api_errors.jsonl file beside it and are retried")
+    print( "  automatically when you resume. Fix the server, then re-run the same command.")
+    sys.exit(4)
+
+
 def abort(msg, out, n, excluded):
     print(f"\n{'=' * 74}\nABORTING: {msg}\n{'=' * 74}")
     print(f"  {n:,} calls attempted this session, {excluded:,} produced no usable choice.")
@@ -421,7 +440,8 @@ def main():
         print("nothing left to do"); return
 
     spent, n, excluded = 0.0, 0, 0
-    recent = collections.deque(maxlen=RECENT_WINDOW)
+    recent = collections.deque(maxlen=RECENT_WINDOW)      # observations only: True = usable choice
+    recent_api = collections.deque(maxlen=RECENT_WINDOW)  # attempts: True = no response at all
     out_tokens_seen = []
     lock = threading.Lock()
     t0 = time.time()
@@ -461,11 +481,12 @@ def main():
                         if fail == "transport":
                             errfh.write(json.dumps(row) + "\n"); errfh.flush()
                             api_failed[0] += 1
-                            n += 1; recent.append(False)
+                            n += 1; recent_api.append(True)
                             continue
                         spent += usd
                         n += 1
                         recent.append(ok)
+                        recent_api.append(False)
                         out_tokens_seen.append(row["out_tokens"])
                         if not ok:
                             excluded += 1
@@ -484,8 +505,12 @@ def main():
         head, tail = todo[:CALIBRATE], todo[CALIBRATE:]
         drain(head)
         if fatal_err[0]: fatal_stop()
-        rate = (excluded + api_failed[0]) / max(n, 1)
-        print(f"\ncalibration  {n} calls, {excluded} failed ({rate:.0%}), ${spent:.4f} spent")
+        observed = n - api_failed[0]
+        rate = excluded / max(observed, 1)
+        api_rate = api_failed[0] / max(n, 1)
+        print(f"\ncalibration  {n} calls attempted: {observed} observations, "
+              f"{excluded} excluded ({rate:.0%} of observations), "
+              f"{api_failed[0]} no response ({api_rate:.0%} of attempts), ${spent:.4f} spent")
         near = sum(1 for o in out_tokens_seen if o >= 0.9 * a.max_tokens)
         share = near / max(len(out_tokens_seen), 1)
         mean_out = sum(out_tokens_seen) / max(len(out_tokens_seen), 1)
@@ -506,9 +531,16 @@ def main():
                   f"under 10; the model is almost certainly still reasoning before answering, "
                   f"so think=false was not honored. At local speeds the run is not feasible.",
                   out, n, excluded)
-        if rate > MAX_FAIL_RATE:
-            abort(f"{rate:.0%} of the first {n} calls produced no usable choice "
-                  f"(limit {MAX_FAIL_RATE:.0%}).", out, n, excluded)
+        if api_rate > MAX_API_FAIL_RATE:
+            transport_stop(f"{api_rate:.0%} of the first {n} calls got no response from the "
+                           f"server (limit {MAX_API_FAIL_RATE:.0%}). For a local Ollama server "
+                           f"this is usually too many workers for one machine: each concurrent "
+                           f"request needs its own context, and the server drops requests it "
+                           f"cannot seat. Lower --concurrency and resume.",
+                           out, n, api_failed[0])
+        if observed and rate > MAX_FAIL_RATE:
+            abort(f"{rate:.0%} of the {observed} calibration observations produced no usable "
+                  f"choice (limit {MAX_FAIL_RATE:.0%}).", out, n, excluded)
         print("             continuing\n")
 
         # ---- the sweep, in chunks so the guards are checked between them
@@ -522,17 +554,25 @@ def main():
                 abort("the local model's weights changed during the run (digest differs). "
                       "Rows before and after would come from different configurations.",
                       out, n, excluded)
+            if len(recent_api) == RECENT_WINDOW:
+                api_fail_rate = sum(recent_api) / len(recent_api)
+                if api_fail_rate > MAX_API_FAIL_RATE:
+                    transport_stop(f"{api_fail_rate:.0%} of the last {RECENT_WINDOW} calls got "
+                                   f"no response from the server (limit "
+                                   f"{MAX_API_FAIL_RATE:.0%}). Lower --concurrency and resume.",
+                                   out, n, api_failed[0])
             if len(recent) == RECENT_WINDOW:
                 fail_rate = 1 - (sum(recent) / len(recent))
                 if fail_rate > MAX_RECENT_FAIL:
-                    abort(f"{fail_rate:.0%} of the last {RECENT_WINDOW} calls produced no "
-                          f"usable choice (limit {MAX_RECENT_FAIL:.0%}).", out, n, excluded)
+                    abort(f"{fail_rate:.0%} of the last {RECENT_WINDOW} observations produced "
+                          f"no usable choice (limit {MAX_RECENT_FAIL:.0%}).", out, n, excluded)
             drain(tail[i:i + chunk_size])
             if fatal_err[0]: fatal_stop()
 
     print(f"\ncompleted    {n:,} calls")
     print(f"spent        ${spent:,.2f} of ${a.cap:.2f}")
-    print(f"excluded     {excluded:,} ({excluded / max(n, 1):.1%})   model responses with no usable choice")
+    print(f"excluded     {excluded:,} ({excluded / max(n - api_failed[0], 1):.1%} of "
+          f"{n - api_failed[0]:,} observations)   model responses with no usable choice")
     if api_failed[0]:
         print(f"api failures {api_failed[0]:,}   no response; logged to {errpath}, retried on resume")
     if out_tokens_seen:

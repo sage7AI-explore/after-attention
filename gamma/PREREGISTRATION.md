@@ -450,3 +450,38 @@ disabled (`LLAMA_ARG_CACHE_RAM=0`), a known workaround for ollama/ollama issue 1
 changes memory use and speed only. It does not change the weights (the digest is checked
 between chunks), the sampling settings, or any input to the model. Rows recorded before the
 pause are kept.
+
+## Protocol note — transport failures are not exclusions (22 September 2026, runner defect)
+
+The local `base_local` run stopped during its calibration window reporting
+"40% of the first 40 calls produced no usable choice", while the same block
+printed `0 failed`. The two numbers disagreed because the guard computed
+
+    rate = (excluded + api_failed) / n
+
+and then reported that rate with the exclusion wording. Sixteen of the forty
+calls had received no response from the Ollama server at all; none of them was
+a model answer, and none of them is in the results file.
+
+This protocol has always drawn the distinction (see the failure-handling note
+above): a transport failure is not an observation and is retried on resume; a
+model exclusion is an observation and is never re-run. The guard did not
+implement it. The runner now does:
+
+* the exclusion guards (`MAX_FAIL_RATE`, `MAX_RECENT_FAIL`) are computed over
+  observations only — attempts that got no response are not in the denominator
+  and not in the numerator;
+* a separate `MAX_API_FAIL_RATE` (10%) stops the run when calls are not
+  reaching the model, under its own wording and its own exit code, so a broken
+  pipe is never reported as the model failing to answer.
+
+No data existed under the old guard beyond the 60 rows already recorded, and
+those rows are unaffected: this changes when the runner stops, never what is
+recorded or which rows are analysed. The 60 rows carry config digest
+`4eb23ef187e2...` and are retained; the 17 failed attempts remain in the
+sidecar and will be retried.
+
+Concurrency is not a registered parameter — each cell is seeded from its own
+indices and the sweep is order-independent — but for the record, the failures
+were produced at `--concurrency 10` against a single local server and the run
+resumes at lower concurrency.
