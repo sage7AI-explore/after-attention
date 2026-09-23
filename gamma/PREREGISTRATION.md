@@ -485,3 +485,45 @@ Concurrency is not a registered parameter — each cell is seeded from its own
 indices and the sweep is order-independent — but for the record, the failures
 were produced at `--concurrency 10` against a single local server and the run
 resumes at lower concurrency.
+
+### Protocol note — 23 September 2026: local runtime parallelism (performance only)
+
+The runtime was started with `OLLAMA_NUM_PARALLEL=25`, in addition to the
+prompt-cache setting recorded above, although the run issues one request at a
+time (`--concurrency 1`). The server reserved key-value cache for all 25 slots,
+which took the model from 7.6 GB of weights to 22 GB resident on a 24 GB
+machine and left 32% of it on the CPU (`ollama ps`: 32%/68% CPU/GPU). Prompt
+reading ran at about 14 tokens per second and calls took about 97 seconds.
+Each call is about 716 input tokens and 4 output tokens, so the run is bound by
+prompt reading.
+
+At 340 recorded rows the run was stopped and the server restarted with
+`OLLAMA_NUM_PARALLEL=1`, leaving `LLAMA_ARG_CACHE_RAM=0` and every other
+setting as before. The model now occupies 8.3 GB, runs 100% on the GPU, reads
+prompts at about 39 tokens per second, and calls take about 19 seconds.
+
+What did not change: the weights (digest `4eb23ef187e2...`, checked between
+chunks and identical on all rows recorded to date), the per-slot context
+(`n_ctx_slot = 8192` before and after), `think=false`, the sampling settings
+(temperature 1.0, top_k 64, top_p 0.95), the prompts, and the seeding of every
+cell from its own indices. Rows 1-340 were recorded under 25 slots and rows
+341 onward under 1 slot; all rows are retained and analysed together. The
+boundary is identified by position in the append-only results file, which was
+checked for partial lines at the restart.
+
+One caveat. Moving the last 32% of the layers from CPU to GPU changes which
+kernels compute them, which can alter floating-point results in the last
+digits. Sampling at temperature 1.0 is stochastic and the seeds are per-cell,
+so this cannot be distinguished from ordinary sampling variation, but it is a
+difference in execution that this note does not claim away.
+
+Robustness check, committed before the full data exist: the H2 contrast
+(B - C) will additionally be reported separately for rows 1-340 and rows 341
+onward. This is descriptive. It is not a hypothesis test, has no bearing on the
+H1, H2 or L decisions, and no threshold on it changes which rows are analysed.
+
+Also for the record: on 23 September a run at `--concurrency 4` under the
+25-slot server stalled under memory pressure (4 rows in about 15 minutes) and
+was reverted to `--concurrency 1`. The 4 rows it recorded are retained. The run
+was also interrupted by a machine restart at 340 rows and resumed from the
+results file.
