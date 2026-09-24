@@ -17,9 +17,15 @@ gamma requires a normalization for "one description rewrite" that is not observa
 range under stated normalizations is given rather than a single number.
 """
 import json, sys, collections
+import random
 import numpy as np
 
 import catalog
+
+# Fixed so the interval is reproducible. Changing either is a change to a reported
+# number and belongs in a commit, not in a shell.
+BOOTSTRAP_SEED = 11
+BOOTSTRAP_DRAWS = 2000
 
 
 def load(paths):
@@ -173,6 +179,34 @@ def report(paths):
             s = [r["chose_best_value"] for r in sub if r["arm"] == arm]
             print(f"  {arm}={np.mean(s):.3f}" if s else f"  {arm}=n/a", end="")
         print()
+
+        # Diversion from the best-value product, with inference. This is the
+        # welfare-relevant quantity, so it should not be reported as a bare pair of
+        # proportions. Bootstrap resamples CHOICE SETS, matching the clustering of the
+        # main estimator, because repetitions within a set share both the offers and the
+        # manipulated sentence. Seeded, so the interval is reproducible.
+        by_set = {}
+        for r in sub:
+            by_set.setdefault(r["set_id"], []).append(r)
+        set_ids = list(by_set)
+
+        def _shift(ids):
+            a = [r for i in ids for r in by_set[i] if r["arm"] == "A"]
+            b = [r for i in ids for r in by_set[i] if r["arm"] == "B"]
+            if not a or not b:
+                return float("nan")
+            return (np.mean([r["chose_best_value"] for r in b])
+                    - np.mean([r["chose_best_value"] for r in a]))
+
+        rng = random.Random(BOOTSTRAP_SEED)
+        point = _shift(set_ids)
+        draws = sorted(
+            _shift([rng.choice(set_ids) for _ in set_ids]) for _ in range(BOOTSTRAP_DRAWS)
+        )
+        lo = draws[int(0.025 * BOOTSTRAP_DRAWS)]
+        hi = draws[int(0.975 * BOOTSTRAP_DRAWS) - 1]
+        print(f"  best-value shift B-A: {point:+.3f}  95% CI [{lo:+.3f}, {hi:+.3f}]"
+              f"  ({BOOTSTRAP_DRAWS} draws, clustered by choice set, seed {BOOTSTRAP_SEED})")
 
     print("\nH2 is the test that carries the paper's claim. If it is indistinguishable from "
           "zero,\nagents in this setting respond to description length rather than to "
