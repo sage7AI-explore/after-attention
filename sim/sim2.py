@@ -246,7 +246,7 @@ def main():
                  for s in range(20) for g in (0.0, 1.5) for x in alphas]
     elif a.sweep == "phase":
         gs = [0.0, 0.25, 0.5, 0.75, 1.0, 1.5, 2.0, 3.0]
-        specs = [dict(alpha=x, gamma=g, seed=s, M=1500, n_mark=12, n_spend=7)
+        specs = [dict(alpha=x, gamma=g, seed=s, M=1500, n_mark=16, n_spend=8)
                  for s in range(4) for g in gs for x in alphas]
     elif a.sweep == "sensitivity":
         base = dict(M=1500, n_mark=12, n_spend=7)

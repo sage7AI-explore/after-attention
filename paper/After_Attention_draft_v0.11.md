@@ -185,6 +185,8 @@ We sweep the agent share $\alpha \in \{0, 0.1, \ldots, 1.0\}$ under two persuada
 
 Table 1 reports outcomes at five values of the agent share under both regimes; all figures are means over 20 seeds. Figure 1 plots the full sweep.
 
+![Simulated market outcomes against twin-buyer adoption, under robust twins ($\gamma = 0$, blue) and manipulable twins ($\gamma = 1.5$, orange). 20 seeds, smoothed best response; bands are $\pm 1$ standard deviation across seeds.](fig_outcomes.png){ width=100% }
+
 **Table 1. Market outcomes vs. agent-buyer share (20 seeds, smoothed best response)**
 
 | Outcome | Regime | $\alpha = 0$ | $\alpha = 0.2$ | $\alpha = 0.3$ | $\alpha = 0.5$ | $\alpha = 1$ |
@@ -244,6 +246,8 @@ So the harm from persuadable buyer agents, on these results, is distributional a
 
 The two-regime comparison above fixes $\gamma$ at 0 or 1.5. Figure 2 sweeps the plane, with $\gamma \in \{0, 0.25, 0.5, 0.75, 1, 1.5, 2, 3\}$ against the same adoption path, 4 seeds per cell.
 
+![Outcomes across the persuadability $\times$ adoption plane. 16-point markup grid, $M = 1{,}500$, 4 seeds per cell.](fig_phase.png){ width=100% }
+
 **Configuration.** This sweep runs at $M = 1{,}500$ buyers on the 16-point markup grid and 8-point spend grid — the same action grids as the headline configuration of §6, at reduced population and seed count for tractability (352 runs). An earlier version of this section used a 12-point markup grid, which Appendix C shows exaggerates discrete outcomes; we re-ran the whole plane on the finer grid and report that. The qualitative features below hold on both grids, and we note where the numbers moved.
 
 **Rent at full adoption rises with $\gamma$, though not monotonically.** Gross margin at $\alpha = 1$ is 4.5% at $\gamma = 0$, 5.8% at 0.25, 8.1% at 0.5, 10.8% at 0.75, 13.7% at 1, 14.8% at 1.5, 13.3% at 2, and 16.3% at 3. The trend is unambiguous and the endpoints differ by more than a factor of three, but the dip at $\gamma = 2$ is within seed noise at four seeds per cell and we do not read the series as strictly increasing. An earlier draft described this series as rising steadily; on the finer grid it does not.
@@ -252,13 +256,13 @@ The two-regime comparison above fixes $\gamma$ at 0 or 1.5. Figure 2 sweeps the 
 
 **Consumer net value crosses zero.** At full adoption, consumer net value per unit is $+0.95$ under robust agents, $+0.80$ at $\gamma = 0.25$, $+0.44$ at $\gamma = 0.5$, $+0.01$ at $\gamma = 0.75$, and $-0.45$ at $\gamma = 1$, continuing to fall thereafter. Between $\gamma = 0.75$ and $\gamma = 1$ the fully-agentic market stops delivering consumers more value per unit than the human market it replaced — the same crossing interval as on the coarse grid. The level of this series is not meaningful (Appendix C), but the crossing point is: there is a persuadability above which agent adoption is not an improvement for buyers on this measure, and it is not an extreme value of the parameter.
 
-Total persuasion spending shows the same escalation as §7.2 across the plane, peaking at 2.8 times the $\alpha = \gamma = 0$ benchmark in the $\gamma = 3$ row. The peak moves left as $\gamma$ rises — more persuadable agents pull the arms race earlier in the adoption path.
+Total persuasion spending shows the same escalation as §7.2 across the plane, peaking at 2.6 times the $\alpha = \gamma = 0$ benchmark in the $\gamma = 3$ row. Where migration is active — $\gamma \geq 0.75$ — the peak also moves left as $\gamma$ rises, from $\alpha = 1$ at $\gamma = 0.75$ and $\gamma = 1$ to $\alpha = 0.6$ at $\gamma = 1.5$ and $2$ and $\alpha = 0.4$ at $\gamma = 3$: more persuadable agents pull the arms race earlier in the adoption path. Below $\gamma = 0.75$ the row maximum sits at $\alpha = 0$, where persuasion spending is simply the pre-agent advertising budget and no migration has begun.
 
 ### 7.5 Structural sensitivity
 
 Table 2 perturbs the four structural parameters one at a time and reports the outcomes that carry the paper's claims. The question is not whether magnitudes move — they do — but whether the sign and rough size of the $\gamma$ effect survive.
 
-**Table 2. Structural sensitivity (values at $\alpha = 1$; 3 seeds, $M = 1{,}500$)**
+**Table 2. Structural sensitivity (values at $\alpha = 1$; 3 seeds, $M = 1{,}500$, 12-point markup and 7-point spend grids)**
 
 | Perturbation | Margin, $\gamma=0$ | Margin, $\gamma=1.5$ | HHI, $\gamma=1.5$ | Peak persuasion, $\gamma=1.5$ |
 |---|---|---|---|---|
@@ -277,7 +281,7 @@ Two internal checks are worth noting. The $\beta$ rows are identical at $\alpha 
 
 ### 7.6 Three variants: elastic demand, mixed agent quality, and conflicted agents
 
-The results so far hold the buyer population and category demand fixed. Table 3 relaxes each in turn. All three variants run on the same reduced configuration as §7.4 ($M = 1{,}500$, 12-point markup grid, 5 seeds), and should be compared against that configuration's baseline rather than against Table 1.
+The results so far hold the buyer population and category demand fixed. Table 3 relaxes each in turn. All three variants run at $M = 1{,}500$ on the 12-point markup and 7-point spend grids with 5 seeds, and should be compared against that configuration's baseline rather than against Table 1 or §7.4, both of which use the finer 16-point grid.
 
 **Table 3. Variants at full agent adoption ($\alpha = 1$)**
 
@@ -619,7 +623,7 @@ by (i). So this profile is not an equilibrium either, and no pure-strategy equil
 | Table 2 (§7.5, structural sensitivity) | `python3 sim/sim2.py sensitivity` | `results/results_sensitivity.jsonl` |
 | Table 3 (§7.6, variants) | `python3 sim/sim2.py variants` | `results/results_variants.jsonl` |
 
-Figures are then produced by `python3 sim/plot2.py results/results_headline.jsonl figures/fig_outcomes.png` and `python3 sim/plot_phase.py`. Every figure and table in §7 is a mean over seeds of the final-10-iteration averages recorded in the corresponding `.jsonl` file; §7.1–7.3 and §7.7 use 20 seeds at $M = 3{,}000$, and §7.4–7.6 use the reduced configurations stated in those sections.
+Figures are then produced by `python3 sim/plot2.py results/results_headline.jsonl figures/fig_outcomes.png` and `python3 sim/plot_phase.py results/results_phase.jsonl figures/fig_phase.png`. Every figure and table in §7 is a mean over seeds of the final-10-iteration averages recorded in the corresponding `.jsonl` file; §7.1–7.3 and §7.7 use 20 seeds at $M = 3{,}000$, and §7.4–7.6 use the reduced configurations stated in those sections.
 
 The original single-file harness (`sim.py`, writing `results.json`) produced the results of drafts up to v0.7 and is retained at `sim/legacy/` so that those numbers remain reproducible. It is **not** the code behind any number in this version, and readers reproducing §7 should not use it.
 

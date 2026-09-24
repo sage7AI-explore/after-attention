@@ -6,6 +6,7 @@ pandoc paper/After_Attention_draft_v0.11.md \
   --pdf-engine=xelatex \
   -H paper/build/preamble.tex \
   -V documentclass=article -V fontsize=11pt -V geometry:margin=1in \
+  --resource-path=.:paper \
   --toc --toc-depth=2
 ```
 

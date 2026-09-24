@@ -1,9 +1,11 @@
 """Figure 2: gamma x alpha phase diagram for After Attention."""
-import json, numpy as np, matplotlib
+import json, sys, numpy as np, matplotlib
 matplotlib.use("Agg")
 import matplotlib.pyplot as plt
 
-R = [json.loads(l) for l in open("results_phase.jsonl")]
+src = sys.argv[1] if len(sys.argv) > 1 else "results/results_phase.jsonl"
+out = sys.argv[2] if len(sys.argv) > 2 else "figures/fig_phase.png"
+R = [json.loads(l) for l in open(src)]
 al = sorted({r["alpha"] for r in R})
 gs = sorted({r["gamma"] for r in R})
 
@@ -39,8 +41,8 @@ ax[1].set_title(f"Total persuasion spend (α=γ=0 baseline ≈ {base:,.0f})", fo
 fig.suptitle("After Attention — outcomes across the persuadability × adoption plane "
              "(4 seeds per cell, smoothed best response)", fontsize=12)
 fig.tight_layout()
-fig.savefig("fig_phase.png", dpi=150)
-print("wrote fig_phase.png; baseline", round(base, 1))
+fig.savefig(out, dpi=150)
+print("wrote", out, "; baseline", round(base, 1))
 
 # text summary for the paper
 print("\ngamma ->", gs)
