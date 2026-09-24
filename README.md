@@ -26,13 +26,14 @@ python3 sim/sim2.py smoke            # ~1 second, sanity check
 | Figure 2 (phase diagram) | `python3 sim/sim2.py phase` | ~9 min | `results/results_phase.jsonl` |
 | Table 2 (sensitivity) | `python3 sim/sim2.py sensitivity` | ~5 min | `results/results_sensitivity.jsonl` |
 | Table 3 (variants and baseline) | `python3 sim/sim2.py variants` | ~27 min | `results/results_variants.jsonl` |
+| Elastic-demand volumes (§7.6) | `python3 sim/run_elastic.py` | ~7 min | `results/results_elastic.jsonl` |
+| ψ sweep (§7.6) | `python3 sim/run_psi.py` | ~7 min | `results/results_psi_sensitivity.jsonl` |
 
 Then:
 
 ```bash
 python3 sim/plot2.py results/results_headline.jsonl figures/fig_outcomes.png   # Figure 1
 python3 sim/plot_phase.py results/results_phase.jsonl figures/fig_phase.png    # Figure 2
-python3 sim/run_elastic.py                                                     # elastic variant sweep
 ```
 
 Sweeps append to their output file and resume if interrupted: re-running the same command picks up
@@ -148,7 +149,7 @@ match the position the runner recorded.
 ## Layout
 
 ```
-sim/        sim2.py (harness), plot2.py, plot_phase.py, run_elastic.py, legacy/sim.py
+sim/        sim2.py (harness), plot2.py, plot_phase.py, run_elastic.py, run_psi.py, legacy/sim.py
 gamma/      catalog.py, run.py, estimate.py, context.py, pricing.py, PREREGISTRATION.md
 results/    .jsonl output, one line per run
 figures/    generated figures
