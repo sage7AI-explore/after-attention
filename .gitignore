@@ -11,3 +11,11 @@ gamma/*.backup_before_prune.jsonl
 # macOS
 .DS_Store
 **/.DS_Store
+
+# The open-weight replication (§8.7) is live. Its partial output is deliberately
+# NOT tracked: the protocol in paper/V0.12_PROTOCOL.md requires the COMPLETE
+# 6,000-row file to be frozen in a single commit before estimate.py is run, and
+# committing a moving file mid-run makes it ambiguous which commit is that
+# freeze. Remove these two lines and commit once the run is verified complete.
+gamma/results_gamma_gemma4_12b.jsonl
+gamma/results_gamma_gemma4_12b.api_errors.jsonl
