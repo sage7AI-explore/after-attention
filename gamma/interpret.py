@@ -26,13 +26,21 @@ def verdict(design, hyp, estimate, se, alpha=0.05):
     e = REG[design]; h = e["hypotheses"][hyp]
     z = estimate / se if se else float("nan")
     p = p_value(z, h["test"])
-    if hyp == "H3":
+    # Designs that register outcome_rules keyed <HYP>_positive/_null/_negative get the
+    # committed sentence. Selection uses only the rule's own stated criteria: a
+    # one-sided-positive test, z of the expected sign, and p < alpha. No threshold here
+    # is new. Extended from H3-only on 2026-09-24, after base_local's data were frozen at
+    # commit 4d1eb8b, because base_local's PRIMARY hypothesis is H2 and the guard did not
+    # cover it — leaving the key selection to whoever read the numbers, which is the one
+    # thing this module exists to prevent. Applying it to base_local reproduces the
+    # mapping made by hand at the time (H2 -> H2_positive); it changes no verdict.
+    if f"{hyp}_positive" in e.get("outcome_rules", {}):
         if h["test"] == "one-sided-positive" and z > 0 and p < alpha:
-            key = "H3_positive"
+            key = f"{hyp}_positive"
         elif z < 0 and p_value(abs(z), "one-sided-positive") < alpha:
-            key = "H3_negative"
+            key = f"{hyp}_negative"
         else:
-            key = "H3_null"
+            key = f"{hyp}_null"
         return key, z, p, e["outcome_rules"][key]
     sig = p < alpha
     return ("significant" if sig else "not significant"), z, p, (
