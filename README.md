@@ -1,7 +1,9 @@
 # After Attention — simulation code and results
 
 Replication material for *After Attention: The Economics of Markets Where the Buyer Is an Agent*
-(Vissa and Sangaraju, 2026).
+(Vissa and Sangaraju, 2026). The current draft is
+[`paper/After_Attention_draft_v0.11.pdf`](paper/After_Attention_draft_v0.11.pdf); earlier drafts are
+kept beside it so that withdrawn results stay inspectable.
 
 The paper models a consumer market with a mixed population of human and agent ("twin") buyers, in
 which sellers choose price, consumer-directed advertising, and agent-directed optimization spend.
@@ -23,13 +25,13 @@ python3 sim/sim2.py smoke            # ~1 second, sanity check
 | Table 1, Figure 1 | `python3 sim/sim2.py headline` | ~15 min | `results/results_headline.jsonl` |
 | Figure 2 (phase diagram) | `python3 sim/sim2.py phase` | ~9 min | `results/results_phase.jsonl` |
 | Table 2 (sensitivity) | `python3 sim/sim2.py sensitivity` | ~5 min | `results/results_sensitivity.jsonl` |
-| Table 3 (variants) | `python3 sim/sim2.py variants` | ~20 min | `results/results_variants.jsonl` |
+| Table 3 (variants and baseline) | `python3 sim/sim2.py variants` | ~27 min | `results/results_variants.jsonl` |
 
 Then:
 
 ```bash
 python3 sim/plot2.py results/results_headline.jsonl figures/fig_outcomes.png   # Figure 1
-python3 sim/plot_phase.py                                                      # Figure 2
+python3 sim/plot_phase.py results/results_phase.jsonl figures/fig_phase.png    # Figure 2
 python3 sim/run_elastic.py                                                     # elastic variant sweep
 ```
 
@@ -91,8 +93,10 @@ Values are averages over the final 10 of 40 iterations. The runner averages acro
   fully manipulable market routed 95% of sales away from the best-value sellers. That result does not
   survive grid refinement under either dynamic and has been withdrawn; see the paper's §6 and
   Appendix C. `sim.py` (the original harness) is kept in `sim/legacy/` so the artifact is reproducible.
-- **`gamma` is a stylized parameter, not a measurement.** No published estimate of the persuadability
-  of a deployed shopping agent exists. Measuring it is the paper's main open problem (§10).
+- **`gamma` is a stylized simulation parameter.** It is not the same object as the measured effect in
+  `gamma/`: §8.4 of the paper maps one to the other and the mapping needs two unobserved quantities,
+  so it yields a range (roughly 0.07 to 2.14) rather than a value. The measurement establishes that
+  the parameter is far from zero; it does not pin it.
 
 ## Measuring γ
 
@@ -122,6 +126,19 @@ Runs resume: re-running the same command continues rather than re-spending.
 filler of the same length. The quantity that carries the paper's claim is **B − C**, not B − A —
 without the length placebo, a text-volume effect would be misread as persuasion.
 
+**What the experiments found.** One sentence of unverifiable promotional text raises a mid-ranked
+product's selection rate by a factor of 8 to 14 across three frontier models, while a length-matched
+neutral placebo does nothing (z = -0.04, +1.18, +1.25), and the share of choices going to the
+best-value product falls on every model. A second preregistered experiment (19,200 further decisions,
+`gamma/context.py`) finds no detectable change in that susceptibility when the buying instruction
+states urgency. A registered open-weight replication on a local Gemma model is running and is
+reported in §8.7 as incomplete. All 37,200 measured decisions are in `gamma/results_gamma_*.jsonl`.
+
+**Preregistration priority is checkable without trusting us.** Commit timestamps can be rewritten;
+GitHub's push records cannot. `gamma/PREREGISTRATION_TIMESTAMP.md` gives the push times and two
+commands that verify the registration commit is an ancestor of a push made a day before the first
+data commit.
+
 **A note on determinism.** Product order is randomized per call from `catalog.seed_for()`, which is
 integer arithmetic rather than `hash()`. Python salts string hashing per process, so a `hash()`-based
 seed makes the runner and the estimator disagree about which permutation was shown, silently
@@ -131,26 +148,24 @@ match the position the runner recorded.
 ## Layout
 
 ```
-sim/        sim2.py (harness), plot2.py, plot_phase.py, legacy/sim.py
-gamma/      catalog.py, run.py, estimate.py, pricing.py, PREREGISTRATION.md
+sim/        sim2.py (harness), plot2.py, plot_phase.py, run_elastic.py, legacy/sim.py
+gamma/      catalog.py, run.py, estimate.py, context.py, pricing.py, PREREGISTRATION.md
 results/    .jsonl output, one line per run
 figures/    generated figures
-paper/      the draft markdown, build_pdf.py, and the generated PDF
+paper/      draft markdown, the generated PDF, BUILD.md, figures
 CHANGELOG.md  what changed between drafts, including claims that were withdrawn
 ```
 
 ## Rebuilding the paper
 
-The PDF is generated from the markdown source, not hand-assembled:
+See [`paper/BUILD.md`](paper/BUILD.md). The PDF is produced by pandoc with xelatex from the markdown
+source and the two figures; `CHANGELOG.md` records every draft revision, including the 95%
+misallocation result reported in an earlier version and later withdrawn.
 
-```bash
-python3 paper/build_pdf.py        # run from the repository root
-```
-
-It reads `paper/After_Attention_draft_v0.10.md` and the two figures in `figures/`, and writes
-`paper/After_Attention_draft_v0.10.pdf` (21 pages). `CHANGELOG.md` records every draft revision,
-including the 95% misallocation result that was reported in an earlier version and later
-withdrawn.
+An earlier `paper/build_pdf.py` has been removed rather than fixed. It rendered LaTeX math by regex,
+and its `\frac` substitution used non-greedy groups that cannot match nested braces — so a nested
+fraction was silently rewritten into a different expression. Any tool that converts math by pattern
+substitution can do this; the PDF is now produced by a real LaTeX engine.
 
 ## Citation
 
