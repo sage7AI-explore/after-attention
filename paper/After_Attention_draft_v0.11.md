@@ -178,7 +178,7 @@ The grid-coarseness condition matters and an earlier version of this corollary o
 
 This is the discrete-grid counterpart of the classical non-existence results. **It is not, however, a theorem about the game we simulate, and we should not let the numbering suggest otherwise.** Assumption 4 replaces the model of §4 wholesale: two sellers rather than twelve, a common cost rather than $c_j = 5 + 10q_j$, captive unit-demand humans with a reservation price rather than logit demand with limited consideration, no advertising, no agent-directed spend, no $\gamma$, no outside option — and, decisively, discontinuous twin demand rather than the smooth logit of §4 at $\mu_t = 3$. The Varian tension that drives Cases A and B requires that discontinuity. Proposition 3 is therefore a standalone benchmark establishing that the *mechanism* — a seller caught between harvesting captive buyers and undercutting for comparing ones — generates non-existence in its cleanest form. It is a reason to expect the simulated game to be badly behaved in the interior; it is not proof that it is.
 
-We therefore justify the smoothed dynamic of §6 on its own terms rather than by appeal to Proposition 3: the game is finite, exact best response cycles on it, and a dynamic that cycles gives numbers that depend on where the cycle is cut. Since the game is finite, a mixed-strategy equilibrium exists by Nash (1950); the appeal to Dasgupta and Maskin (1986) in an earlier version was misplaced, as that result concerns continuous action spaces with discontinuous payoffs. We also note what the smoothed dynamic does and does not deliver: with a fixed temperature $\tau > 0$ it converges to the stationary distribution of a particular revision protocol, which is a quantal-response object rather than a Nash mixed equilibrium, and §7 reports averages over that distribution. Appendix C quantifies what the smoothing costs.
+We therefore justify the smoothed dynamic of §6 on its own terms rather than by appeal to Proposition 3: the game is finite, exact best response cycles on it, and a dynamic that cycles gives numbers that depend on where the cycle is cut. Since the game is finite, a mixed-strategy equilibrium exists by Nash (1951); results for discontinuous games on continuous action spaces are not what this setting needs. We also note what the smoothed dynamic does and does not deliver: with a fixed temperature $\tau > 0$ it converges to the stationary distribution of a particular revision protocol, which is a quantal-response object rather than a Nash mixed equilibrium, and §7 reports averages over that distribution. Appendix C quantifies what the smoothing costs.
 
 ### 5.4 Integrity as the efficiency parameter
 
@@ -522,13 +522,15 @@ McKinsey & Company (2025). *The agentic commerce opportunity: How AI agents are 
 
 Morgan Stanley Research (2025). *Here Come the Shopping Bots*. 8 December 2025. (Projects \$190–385 billion of US agentic e-commerce spending by 2030.)
 
+Nash, J. (1951). Non-Cooperative Games. *Annals of Mathematics*, 54(2), 286–295.
+
 OpenAI and Stripe (2025). *Agentic Commerce Protocol (ACP) and Instant Checkout*. Announced 29 September 2025.
 
 Pew Research Center (2025). *Google users are less likely to click on links when an AI summary appears in the results*. Chapekis, A., and Lieb, A., 22 July 2025.
 
-Salvi, F., Cuevas, M., and Horta Ribeiro, M. (2026). *Commercial Persuasion in AI-Mediated Conversations*. arXiv:2604.04263.
-
 Salop, S., and Stiglitz, J. (1977). Bargains and Ripoffs: A Model of Monopolistically Competitive Price Dispersion. *Review of Economic Studies*, 44(3), 493–510.
+
+Salvi, F., Cuevas, M., and Horta Ribeiro, M. (2026). *Commercial Persuasion in AI-Mediated Conversations*. arXiv:2604.04263.
 
 Sangaraju, V., and Vissa, S. (2026). Lineage-aware memory governance: A derivation-gated framework for privacy-preserving column-level access control in enterprise AI agents. *IEEE Access*, 14, 139683–139693. DOI: 10.1109/ACCESS.2026.3730363.
 
