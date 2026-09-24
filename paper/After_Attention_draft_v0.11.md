@@ -10,6 +10,8 @@ date: "Working paper, September 2026. Comments welcome."
 
 **Venkata M. Sangaraju**, independent researcher — sangaraju1988@gmail.com
 
+**Cite as.** Vissa, S., and Sangaraju, V. M. (2026). *After Attention: The Economics of Markets Where the Buyer Is an Agent.* SSRN Working Paper 7516238. <https://papers.ssrn.com/sol3/papers.cfm?abstract_id=7516238>
+
 **Code and data availability.** Simulation code, both preregistrations, and all 37,200 measured purchase decisions are at <https://github.com/sage7AI-explore/after-attention>. Appendix B lists the commands that regenerate every number in §7.
 
 ---
