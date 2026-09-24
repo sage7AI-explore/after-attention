@@ -214,7 +214,14 @@ def run(alpha, gamma=0.0, seed=0, variant="base", **over):
     avg.update(sd)
     avg.update(alpha=float(alpha), gamma=float(gamma), seed=int(seed), variant=variant,
                revisions_last10=float(np.mean(changes[-p["window"]:])),
-               settled=bool(np.mean(changes[-p["window"]:]) < 0.5))
+               settled=bool(np.mean(changes[-p["window"]:]) < 0.5),
+               # A genuine pure-strategy fixed point: a full sweep in which every
+               # seller was visited and none changed its action. Only meaningful at
+               # inertia = 0; with inertia > 0 a zero-change sweep can mean only that
+               # the sellers who would have moved were the ones that skipped, which is
+               # why `settled` above is a descriptive flag and not a fixed-point test.
+               zero_change_sweeps=int(sum(1 for c in changes if c == 0)),
+               final_sweep_changes=int(changes[-1]))
     for k in ("tau", "inertia", "n_mark", "n_spend", "M", "theta_q", "lam", "beta_h", "mu_t",
               "rho_robust", "elastic_scale"):
         avg[k] = p[k]
@@ -234,7 +241,19 @@ def main():
     ap.add_argument("sweep", choices=["headline", "phase", "sensitivity", "variants", "smoke"])
     ap.add_argument("--out", default=None)
     ap.add_argument("--procs", type=int, default=2)
+    ap.add_argument("--set", action="append", default=[], metavar="KEY=VALUE",
+                    help="override a run parameter for every spec in the sweep, e.g. "
+                         "--set tau=0.05. Floats are parsed as floats, ints as ints. "
+                         "Used for the robustness sweeps in Appendix C.")
     a = ap.parse_args()
+
+    def _parse(v):
+        try:
+            return int(v) if v.lstrip("-").isdigit() else float(v)
+        except ValueError:
+            return v
+    overrides = dict(kv.split("=", 1) for kv in a.set)
+    overrides = {k: _parse(v) for k, v in overrides.items()}
 
     alphas = [0, .1, .2, .3, .4, .5, .6, .7, .8, .9, 1.0]
     specs = []
@@ -264,6 +283,9 @@ def main():
                 for g in (0.0, 1.5):
                     for x in alphas:
                         specs.append(dict(alpha=x, gamma=g, seed=s, variant=v, **base))
+
+    if overrides:
+        specs = [dict(sp, **overrides) for sp in specs]
 
     out = a.out or f"results_{a.sweep}.jsonl"
     done = 0
