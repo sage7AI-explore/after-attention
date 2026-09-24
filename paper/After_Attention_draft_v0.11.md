@@ -548,7 +548,7 @@ Varian, H. R. (1980). A Model of Sales. *American Economic Review*, 70(4), 651â€
 
 Visa (2025). *Trusted Agent Protocol*. Announced 14 October 2025, developed with Cloudflare; built on HTTP Message Signatures.
 
-Vissa, S. (2026). *The Autonomous Agentic Store: A Constitutional AI Framework for Fully Staffless Physical Retail*. SSRN Working Paper 6600538, posted 4 May 2026.
+Vissa, S. (2026). *The Autonomous Agentic Store: Architecture, Safety Requirements, and a Constitutional AI Deployment Framework for Fully Staffless Physical Retail*. SSRN Working Paper 6600538. DOI: 10.2139/ssrn.6600538.
 
 Wadi, D., and Ma, Y. (2026). *Does Rank Still Matter? Position Bias When AI Agents Shop on Our Behalf*. arXiv:2608.22697.
 
