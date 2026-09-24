@@ -281,7 +281,7 @@ Two internal checks are worth noting. The $\beta$ rows are identical at $\alpha 
 
 ### 7.6 Three variants: elastic demand, mixed agent quality, and conflicted agents
 
-The results so far hold the buyer population and category demand fixed. Table 3 relaxes each in turn. All three variants run at $M = 1{,}500$ on the 12-point markup and 7-point spend grids with 5 seeds, and should be compared against that configuration's baseline rather than against Table 1 or §7.4, both of which use the finer 16-point grid.
+The results so far hold the buyer population and category demand fixed. Table 3 relaxes each in turn. All three variants, and the baseline column they are compared against, run at $M = 1{,}500$ on the 12-point markup and 7-point spend grids with 5 seeds, from the single command in Appendix B. They should not be compared against Table 1 or §7.4, both of which use the finer 16-point grid.
 
 **Table 3. Variants at full agent adoption ($\alpha = 1$)**
 
@@ -289,14 +289,14 @@ The results so far hold the buyer population and category demand fixed. Table 3 
 |---|---|---|---|---|---|---|
 | | $\gamma=0$ | $\gamma=1.5$ | $\gamma=0$ | $\gamma=1.5$ | $\gamma=0$ | $\gamma=1.5$ |
 | Gross margin | 0.05 | 0.14 | 0.05 | 0.10 | 0.05 | 0.12 |
-| Concentration (HHI) | 3,617 | 8,567 | 3,722 | **4,437** | 3,918 | 4,375 |
-| Top-3 true-value share | 0.88 | 0.68 | 0.88 | 0.70 | 0.88 | **0.60** |
-| Consumer net value per unit | +0.83 | −0.46 | +0.89 | **+0.03** | +0.62 | **−0.67** |
-| Total persuasion spend | 224 | 4,497 | 256 | 2,813 | 613 | 3,295 |
+| Concentration (HHI) | 3,776 | 8,494 | 3,722 | **4,437** | 3,918 | 4,375 |
+| Top-3 true-value share | 0.88 | 0.69 | 0.88 | 0.70 | 0.88 | **0.60** |
+| Consumer net value per unit | +0.90 | −0.43 | +0.89 | **+0.03** | +0.62 | **−0.67** |
+| Total persuasion spend | 225 | 4,446 | 256 | 2,813 | 613 | 3,295 |
 
 **Elastic category demand.** When the outside option strengthens with the market price level, the transition costs the category volume — but only under robust agents. Units sold fall from 1,492 at $\alpha = 0$ to 951 at $\alpha = 0.4$, recovering to 1,264 at full adoption as prices fall. Under persuadable agents volume never contracts at all (1,490 to 1,500 across the whole path), because agent-directed spend enters twin utility and props up the purchase decision. Persuasion buys back the volume that price competition would otherwise cost the category. This is the agentic-commerce counterpart of the long-standing finding that advertising expands category demand, and it is worth flagging for anyone reading category growth as evidence that agent adoption is going well.
 
-**Mixed agent quality.** When half the twin population is robust and half is persuadable, the robust half does substantial work. Concentration at full adoption falls from 8,567 to 4,437 — roughly half the structural damage removed by half the population — and consumer net value per unit returns to approximately break-even (+0.03 against −0.46). Seller margin falls by less, from 0.14 to 0.10. Robust agents therefore generate a positive externality for buyers whose agents are not robust, and they do it more effectively on market structure than on price. A policy that raises the share of resistant agents does not need to reach every buyer to matter.
+**Mixed agent quality.** When half the twin population is robust and half is persuadable, the robust half does substantial work. Concentration at full adoption falls from 8,494 to 4,437 — roughly half the structural damage removed by half the population — and consumer net value per unit returns to approximately break-even (+0.03 against −0.43). Seller margin falls by less, from 0.14 to 0.10. Robust agents therefore generate a positive externality for buyers whose agents are not robust, and they do it more effectively on market structure than on price. A policy that raises the share of resistant agents does not need to reach every buyer to matter.
 
 **Conflicted agents.** The third variant replaces the robust half of that mixture with a platform-owned agent that weights a per-sale commission offered by the seller. The commission is a transfer out of the seller's margin rather than a fixed cost, which is what distinguishes an agent with divided loyalty from one that is merely persuadable. Against the mixed-quality variant — the same 50/50 population structure — conflicted agents cut the top-three true-value share from 0.70 to **0.60** and consumer net value per unit from +0.03 to **−0.67**, the worst figure anywhere in our results. Sellers pay about 520 in commissions at full adoption.
 
@@ -621,7 +621,7 @@ by (i). So this profile is not an equilibrium either, and no pure-strategy equil
 | Table 1, Figure 1 (§7.1–7.3, 7.7) | `python3 sim/sim2.py headline` | `results/results_headline.jsonl` (440 runs) |
 | Figure 2 (§7.4, persuadability plane) | `python3 sim/sim2.py phase` | `results/results_phase.jsonl` (352 runs) |
 | Table 2 (§7.5, structural sensitivity) | `python3 sim/sim2.py sensitivity` | `results/results_sensitivity.jsonl` |
-| Table 3 (§7.6, variants) | `python3 sim/sim2.py variants` | `results/results_variants.jsonl` |
+| Table 3 (§7.6, variants and their baseline) | `python3 sim/sim2.py variants` | `results/results_variants.jsonl` (440 runs) |
 
 Figures are then produced by `python3 sim/plot2.py results/results_headline.jsonl figures/fig_outcomes.png` and `python3 sim/plot_phase.py results/results_phase.jsonl figures/fig_phase.png`. Every figure and table in §7 is a mean over seeds of the final-10-iteration averages recorded in the corresponding `.jsonl` file; §7.1–7.3 and §7.7 use 20 seeds at $M = 3{,}000$, and §7.4–7.6 use the reduced configurations stated in those sections.
 

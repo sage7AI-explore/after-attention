@@ -259,7 +259,7 @@ def main():
                  for pp in pert for s in range(3) for g in (0.0, 1.5) for x in (0.0, 0.3, 0.5, 1.0)]
     elif a.sweep == "variants":
         base = dict(M=1500, n_mark=12, n_spend=7)
-        for v in ("elastic", "hetero", "conflict"):
+        for v in ("base", "elastic", "hetero", "conflict"):
             for s in range(5):
                 for g in (0.0, 1.5):
                     for x in alphas:
