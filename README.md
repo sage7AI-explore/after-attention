@@ -33,6 +33,8 @@ python3 sim/sim2.py smoke            # ~1 second, sanity check
 | Exact BR at full adoption (App. C) | `python3 sim/run_exact.py fine` | ~9 min | `results/results_exact_fine.jsonl` |
 | Smoothing sweep (App. C) | `python3 sim/sim2.py headline --set tau=0.05` | ~15 min | `results/results_headline_tau0.05.jsonl` |
 | Smoothing sweep (App. C) | `python3 sim/sim2.py headline --set tau=0.3` | ~15 min | `results/results_headline_tau0.3.jsonl` |
+| Agent-sharpness sweep (App. C) | `python3 sim/sim2.py headline --set mu_t=10` | ~15 min | `results/results_headline_mu10.jsonl` |
+| Agent-sharpness sweep (App. C) | `python3 sim/sim2.py headline --set mu_t=20` | ~15 min | `results/results_headline_mu20.jsonl` |
 
 Then:
 
