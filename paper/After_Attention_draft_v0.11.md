@@ -6,6 +6,8 @@
 
 *Draft v0.11 — September 24, 2026. Working paper; comments welcome.*
 
+**Code and data availability.** Simulation code, both preregistrations, and all 37,200 measured purchase decisions are at <https://github.com/sage7AI-explore/after-attention>. Appendix B lists the commands that regenerate every number in §7.
+
 ---
 
 ## Abstract
@@ -608,7 +610,7 @@ by (i). So this profile is not an equilibrium either, and no pure-strategy equil
 
 **Reporting.** Outcomes are computed at each of the final 10 of 40 iterations and averaged, then averaged again over 20 seeds.
 
-**Reproduction.** The commands below regenerate every number in §7. They are the commands in the repository's README, and the outputs they write are the files the tables are computed from.
+**Reproduction.** The commands below regenerate every number in §7. They are the commands in the README of <https://github.com/sage7AI-explore/after-attention>, and the outputs they write are the files the tables are computed from.
 
 | Paper object | Command | Output |
 |---|---|---|
