@@ -1,7 +1,7 @@
 # After Attention — simulation code and results
 
 Replication material for *After Attention: The Economics of Markets Where the Buyer Is an Agent*
-(Vissa and Sangaraju, 2026) — **[SSRN 7516238](https://papers.ssrn.com/sol3/papers.cfm?abstract_id=7516238)**. The current draft is
+(Vissa and Sangaraju, 2026) — **[SSRN 7516238](https://papers.ssrn.com/sol3/papers.cfm?abstract_id=7516238)** · DOI [10.2139/ssrn.7516238](https://doi.org/10.2139/ssrn.7516238). The current draft is
 [`paper/After_Attention_draft_v0.11.pdf`](paper/After_Attention_draft_v0.11.pdf); earlier drafts are
 kept beside it so that withdrawn results stay inspectable.
 
@@ -176,7 +176,8 @@ substitution can do this; the PDF is now produced by a real LaTeX engine.
   year   = {2026},
   type   = {SSRN Working Paper},
   number = {7516238},
-  url    = {https://papers.ssrn.com/sol3/papers.cfm?abstract_id=7516238}
+  doi    = {10.2139/ssrn.7516238},
+  url    = {https://doi.org/10.2139/ssrn.7516238}
 }
 ```
 
