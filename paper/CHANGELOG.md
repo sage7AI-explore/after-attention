@@ -375,3 +375,61 @@ papers (2608.04276, 2608.01406, 2608.03788).
 ## v0.1 — 16 Sep 2026
 - Build-out document: thesis, three propositions, model sketch, preliminary results, outline,
   next steps, risks. Not a manuscript.
+
+## v0.12b — 24 September 2026
+
+Twelve corrections, of which two change headline claims. Nothing in Tables 1–4
+moved; what moved is what the paper says about those numbers.
+
+**From an independent re-derivation** (a separate session recomputed ~300
+reported numbers from the committed data):
+
+1. §7.6 claimed conflicted agents lower both top-three share and consumer net
+   value "at every ψ we tried." False — top-three share is *higher* at ψ = 0.25
+   and 0.5. Rewritten; §11 scoped to ψ ≥ 1.
+2. §8.7 claimed gemma's magnitudes sit inside the hosted range "on every
+   measure." False on three of five, and it contradicted the note under Table 4.
+3. Appendix B claimed one command regenerates every number in §7. The elastic
+   volumes come from `run_elastic.py`; the ψ sweep had no committed driver at
+   all. `sim/run_psi.py` added.
+4. Table 4 factors were computed from rounded shares: gemini 13.6× → 14.5×,
+   gemma 11.6× → 11.4×. Abstract's "8 to 14" → "8.4 to 14.5".
+5. §8.3 placebo 95% upper bounds: +0.96/+1.52/+1.01 → +0.99/+1.54/+1.03.
+6. §8.6: fifteen of the sixteen gemini exclusions are truncations, not sixteen.
+7. The 0 → 0.2 margin move is 1.46 pp, not 1.4.
+8. Appendix C cited a grid discussion that is not in §7.3.
+
+**Found while verifying those:**
+
+9.  Appendix C's convergence check rested on a `settled` flag that is a
+    threshold on average revisions, not a fixed-point test — and Appendix B
+    claimed an early stop the code does not have. Rerun as genuine exact best
+    response (τ → 0, ι = 0) on both grids: 9 of 110 fixed points on the coarse
+    grid, **two of them interior**; 5 of 110 on the fine grid, **none
+    interior**. Better than the claim it replaces: Corollary 2's grid-fineness
+    condition visible in the numerics.
+10. Exact best response at α = 1 leaves three of four headline contrasts
+    intact but moves the robust-agent top-three share from 0.845 to 0.642, so
+    the abstract's "about 85% either way" was a property of the smoothed
+    dynamic.
+11. **τ = 0.15 was never tested.** Swept at 0.05 and 0.30 (440 runs each). The
+    four headline results hold at every τ. The concentration *ratio* and the
+    flatness before the knee do not, and are now flagged where quoted.
+12. **μ_t = 3 was never tested, and this is the one that changes a headline
+    result.** Swept at 10 and 20 (440 runs each). Three contrasts strengthen;
+    the concentration ratio collapses to 1.11×; and §7.3's allocative null
+    *reverses* — persuadability costs −12.2 pp (t = −5.86) and −9.1 pp
+    (t = −5.48) of top-three share against +1.5 pp (t = +0.49) at μ_t = 3. The
+    null was measured against a benchmark too noisy to see the effect. Abstract,
+    §1, §7.3, §12 and Appendix C now carry the conditional statement.
+
+**Added:** §8.6 now reports CR2 and wild cluster bootstrap inference for the
+40-cluster design (`gamma/robust_se.py`). All four H2 results stay significant
+under both; CR0 rejects ~6% under the null against ~5% for CR2 and the
+bootstrap. References added for Kline & Santos (2012) and Pustejovsky & Tipton
+(2018), both verified against Crossref.
+
+`sim2.py` gains `--set KEY=VALUE`, and records `zero_change_sweeps` and
+`final_sweep_changes` (additive — a rerun reproduces pre-change output to 1e-9).
+Appendix B and the README now list every command that produces a number in §7,
+which they did not before.
