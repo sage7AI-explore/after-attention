@@ -1,10 +1,14 @@
-# After Attention: The Economics of Markets Where the Buyer Is an Agent
+---
+title: "After Attention: The Economics of Markets Where the Buyer Is an Agent"
+author:
+  - Sudhir Vissa
+  - Venkata M. Sangaraju
+date: "Working paper, September 2026. Comments welcome."
+---
 
-**Sudhir Vissa**¹ and **Venkata M. Sangaraju**
+**Sudhir Vissa**, SAGE7 AI — sudhir.vissa@sage7.ai (corresponding author)
 
-¹ SAGE7 AI · Correspondence: sudhir.vissa@sage7.ai
-
-*Draft v0.11 — September 24, 2026. Working paper; comments welcome.*
+**Venkata M. Sangaraju**, independent researcher — sangaraju1988@gmail.com
 
 **Code and data availability.** Simulation code, both preregistrations, and all 37,200 measured purchase decisions are at <https://github.com/sage7AI-explore/after-attention>. Appendix B lists the commands that regenerate every number in §7.
 
@@ -15,6 +19,7 @@
 The consumer economy runs in part on *attention rent*: margin that sellers extract because human buyers search a little, remember imperfectly, and respond to persuasion. As personal purchasing agents ("twins") take over consumer choice, the standard expectation is that this rent collapses. We model a market with a mixed population of human and agent buyers in which sellers choose price, consumer-directed advertising, and agent-directed optimization spend, and we show that the collapse is neither smooth nor complete. Four results follow from the structure of agent demand. First, because a well-informed agent's demand is close to winner-take-most in quality-adjusted price, sellers face a discrete choice between a human-exploiting price and an agent-competitive one, which produces a *tipping point*: in our simulations gross margin falls 1.4 percentage points as the agent share rises from 0 to 0.2, then drops from 40% to 33% by a share of 0.3 and to 4% when all buyers are agents. Second, the mixed population admits no pure-strategy equilibrium in the interior — a discrete-grid counterpart of Varian (1980) — which we prove and which matches the numerics exactly: every convergent run in our sweeps sits at one of the two boundaries. Third, if agents are persuadable, advertising does not disappear but *migrates*: total persuasion spending peaks at 1.68 times the pre-agent advertising budget and remains above it when all buyers are agents. That migration does not chiefly misallocate demand — good sellers still win about 85% of sales either way — but it preserves seller rent (margin 9.9% against 4.0%) and concentrates the market by a factor of 2.4 (HHI 7,424 against 3,102). Consumer net value per unit also falls, and across the persuadability range it crosses from positive to negative between $\gamma = 0.75$ and $\gamma = 1$; we report that crossing rather than a percentage change, because the level of that series is an artifact of the value scale (Appendix C). Fourth, we measure the parameter the third result turns on. In a preregistered experiment of 18,000 purchase decisions across three frontier LLMs acting as buyers, one sentence of unverifiable promotional text raises a mid-ranked product's selection rate by a factor of 8 to 14, while a length-matched neutral placebo does nothing ($z = -0.04$, $+1.18$, $+1.25$) — and the share going to the genuinely best-value product falls on every model. A second preregistered experiment of 19,200 further decisions finds that this susceptibility does not detectably change when the buying instruction states urgency. Persuadability is therefore not an assumption of this paper but a measured property of the models tested. We also read the agentic-commerce protocols standardized between 2025 and 2026 — AP2, ACP, Visa's Trusted Agent Protocol, Mastercard Agent Pay and UCP — and find that they cryptographically secure payment authorization while leaving product claims unstructured and unattested, lowering the friction that governs adoption without touching the parameter that governs who captures the gains. Simulation code, both preregistrations, and all 37,200 measured decisions are public.
 
 **Keywords:** agentic commerce, attention rent, buyer agents, persuasion, market efficiency, AI agents
+
 **JEL:** D83, L13, M37, D47
 
 ---
@@ -246,7 +251,7 @@ So the harm from persuadable buyer agents, on these results, is distributional a
 
 The two-regime comparison above fixes $\gamma$ at 0 or 1.5. Figure 2 sweeps the plane, with $\gamma \in \{0, 0.25, 0.5, 0.75, 1, 1.5, 2, 3\}$ against the same adoption path, 4 seeds per cell.
 
-![Outcomes across the persuadability $\times$ adoption plane. 16-point markup grid, $M = 1{,}500$, 4 seeds per cell.](fig_phase.png){ width=100% }
+![Outcomes across the persuadability $\times$ adoption plane. 16-point markup grid, $M = 1{,}500$, 4 seeds per cell.](fig_phase.png){ width=72% }
 
 **Configuration.** This sweep runs at $M = 1{,}500$ buyers on the 16-point markup grid and 8-point spend grid — the same action grids as the headline configuration of §6, at reduced population and seed count for tractability (352 runs). An earlier version of this section used a 12-point markup grid, which Appendix C shows exaggerates discrete outcomes; we re-ran the whole plane on the finer grid and report that. The qualitative features below hold on both grids, and we note where the numbers moved.
 
@@ -519,9 +524,9 @@ Universal Commerce Protocol (2026). *UCP Specification*, v2026-01-11 (11 January
 
 Varian, H. R. (1980). A Model of Sales. *American Economic Review*, 70(4), 651–659. (Errata: 71(3), 517, 1981.)
 
-Vissa, S. (2026). *The Autonomous Agentic Store: A Constitutional AI Framework for Fully Staffless Physical Retail*. SSRN Working Paper 6600538, posted 4 May 2026.
-
 Visa (2025). *Trusted Agent Protocol*. Announced 14 October 2025, developed with Cloudflare; built on HTTP Message Signatures.
+
+Vissa, S. (2026). *The Autonomous Agentic Store: A Constitutional AI Framework for Fully Staffless Physical Retail*. SSRN Working Paper 6600538, posted 4 May 2026.
 
 Wadi, D., and Ma, Y. (2026). *Does Rank Still Matter? Position Bias When AI Agents Shop on Our Behalf*. arXiv:2608.22697.
 
@@ -589,6 +594,8 @@ by (i). So this profile is not an equilibrium either, and no pure-strategy equil
 
 ## Appendix B. Simulation implementation and parameters
 
+The table below is the **headline configuration**, used for Table 1, Figure 1 and §7.1–7.3 and §7.7. §7.4–7.6 run at reduced population, grid and seed count, each stated in its own section.
+
 | Parameter | Value | Meaning |
 |---|---|---|
 | $N$ | 12 | sellers |
@@ -637,7 +644,7 @@ The original single-file harness (`sim.py`, writing `results.json`) produced the
 
 **The elastic variant needed calibration, and that is a judgment call.** The outside option's price sensitivity is a free parameter. At scale 0.4 the category collapses entirely under robust agents at full adoption (125 of 1,500 units); at 0.15 it contracts and recovers, which is the behavior we report. We chose 0.15 because it produces contraction without extinction, not because it is estimated from anything. The qualitative finding — that persuadable agents sustain category volume robust agents do not — holds at every scale we tried, but its magnitude is a choice.
 
-**Variant results are exploratory.** The three variants of §7.6 run on the reduced configuration (1,500 buyers, 12-point grid, 5 seeds), which §7.3's grid discussion shows is coarse enough to exaggerate discrete outcomes. Compare them against the same-configuration baseline, which is what Table 3 does, and treat the direction rather than the magnitude as the finding. The top-three value share at $\gamma = 1.5$, $\alpha = 1$ is 0.68 on this configuration and 0.86 on the finer headline configuration — the variant comparisons are internally consistent, but not directly comparable to Table 1.
+**Variant results are exploratory.** The three variants of §7.6 run on the reduced configuration (1,500 buyers, 12-point grid, 5 seeds), which §7.3's grid discussion shows is coarse enough to exaggerate discrete outcomes. Compare them against the same-configuration baseline, which is what Table 3 does, and treat the direction rather than the magnitude as the finding. The top-three value share at $\gamma = 1.5$, $\alpha = 1$ is 0.69 on this configuration and 0.86 on the finer headline configuration — the variant comparisons are internally consistent, but not directly comparable to Table 1.
 
 **Seed dispersion.** Results are means over 20 seeds; the shaded bands in Figure 1 are ±1 standard deviation across seeds. The qualitative pattern — flat-then-falling margins under $\gamma = 0$, and under $\gamma = 1.5$ rising total persuasion spend with higher retained margin and higher concentration — holds in every seed. Point magnitudes do not.
 
