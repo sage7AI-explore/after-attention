@@ -1,3 +1,60 @@
+# v0.12 — 25 September 2026
+
+The open-weight replication registered in v0.11 as incomplete has completed, and
+§8.7 is rewritten from a design statement to a result.
+
+**The replication succeeds.** `gemma4:12b`, executed locally at a recorded
+configuration digest with reasoning disabled, 6,000 calls: persuasion net of
+length is +2.57 (se 0.37, z 6.91). The registered verdict is `H2_positive`,
+whose text was committed on 22 September: *persuasion net of length replicates on
+a locally executed open-weight model; the effect is not specific to hosted
+frontier models.* Target share moves 3.5% to 40.6% and the best-value share falls
+0.415 to 0.280 (95% CI [-0.186, -0.089]). New Table 4 places it against the three
+hosted models; it sits inside their range on every measure.
+
+What that closes: before this experiment a reader could hold that §8.3 measured
+an artifact of three vendors' scaffolding, retrieval or system prompts. That
+reading is no longer available.
+
+**Totals.** 37,200 measured decisions becomes 43,200 across three preregistered
+experiments (18,000 + 19,200 + 6,000). Updated in the abstract, front matter, §1
+and §8.
+
+**Reported honestly alongside it.** `gemma4:12b` has the lowest baseline
+best-value share of the four models and among the largest falls in it, and one
+open model cannot separate those. The registration was amended before any data to
+disable the model's default reasoning mode, for tractability at 1,400 tokens per
+call; that is a weaker reconstructor of the comparison than the default
+configuration, so the replication is of that configuration. Both are new
+limitation 11 in §11.
+
+**The runtime change mid-run.** The protocol note committed, before the data
+existed, to reporting the B - C contrast either side of the 340-row boundary where
+the local server was reconfigured from 25 slots to 1. It is +1.53 (se 0.38) and
++2.67 (se 0.41) — positive in both. The difference is not attributed to hardware:
+the early block spans three choice sets, and those three sets are weak ones
+(per-set gaps +0.26, +0.28, +0.14 against an all-set median of +0.31), so the
+lower early estimate is what they alone would produce. The check can show the
+effect was not reversed; it cannot rule out a small effect on the estimate's size.
+
+**Corrections carried in this revision.**
+
+- §8.3's bootstrap intervals were computed in a shell when added to v0.11. They
+  are now produced by `estimate.py` with the seed and draw count as module
+  constants. That moved two of them in the third decimal: gemini-3.8-flash
+  [-0.154, -0.044] to [-0.153, -0.046], gpt-5.6-terra [-0.222, -0.100] to
+  [-0.225, -0.103].
+- §11.9's description of the urgency null now matches the corrected §8.5: the
+  +1.0 exclusion holds on one of two models, not both, and there is no registered
+  equivalence bound.
+- §8.6 now states the limit of push-time evidence — it establishes when a file
+  was published, not when the calls were made — and records that §8.7 additionally
+  froze its data in a commit before the estimator was run.
+
+**Still open, and stated as such:** no tau sensitivity analysis, model versions
+unpinned, and the 40-cluster estimator is not yet reported with CR2 or a wild
+cluster bootstrap. See `V0.12_PROTOCOL.md`.
+
 # Changelog
 
 ## v0.11 — 24 Sep 2026
