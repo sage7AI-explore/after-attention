@@ -7,3 +7,7 @@ gamma/results_gamma_*_dry.jsonl
 .env.*
 *.env
 gamma/*.backup_before_prune.jsonl
+
+# macOS
+.DS_Store
+**/.DS_Store
