@@ -1,4 +1,176 @@
-# v0.12 — 25 September 2026
+# After Attention — paper changelog
+
+Versioning rule: any fix to a delivered file gets a new version number. Earlier
+versions stay in the folder rather than being overwritten. Newest first.
+
+This file and `paper/CHANGELOG.md` are kept identical. The duplication is
+historical and one of the two should go; until then, edit either and copy
+across.
+
+## v0.13 — 25 September 2026
+
+A second independent re-derivation (~150 claims checked) found nine more
+discrepancies. All are fixed here, and the first retires a headline claim.
+
+1. **The allocative contrast is not robustly identified, and v0.12b's fix was
+   itself wrong.** v0.12b scoped the claim to μ_t, having found the null
+   reverses at μ_t = 10 and 20. The τ sweep reverses it the *other* way:
+
+   | | robust | persuadable | contrast |
+   |---|---|---|---|
+   | exact BR | 0.642 | 0.839 | +19.7 pp |
+   | τ = 0.05 | 0.699 | 0.867 | +16.8 pp |
+   | τ = 0.15 (published) | 0.845 | 0.859 | +1.5 pp (n.s.) |
+   | τ = 0.30 | 0.927 | 0.792 | −13.5 pp |
+   | μ_t = 10 | 0.997 | 0.875 | −12.2 pp |
+   | μ_t = 20 | 1.000 | 0.909 | −9.1 pp |
+
+   The persuadable series sits in 0.79–0.91 throughout; the robust benchmark
+   runs 0.64–1.00. The sign is a reading of the benchmark, and the benchmark is
+   set by τ and μ_t, both chosen. §7.3 now declines to sign the effect —
+   *not robustly identified, because its sign depends on the benchmark
+   equilibrium* — while keeping what the pattern does show: persuasion spending
+   imposes its own allocation largely independent of how sharply the agent
+   discriminates. Abstract, §1, §12 and Appendix C follow.
+2. §7.3's closing line and §12's "concentration more than doubles" contradicted
+   the paper's own sensitivity results. Both restated.
+3. The μ_t = 20 persuasion peak is 1.99×, not 2.03×. §7.2 now also states that
+   every ratio we print is a ratio of the two seed means, not a mean of
+   per-seed ratios (which is 1.82), so each is recoverable from the levels
+   printed beside it.
+4. The μ_t = 20 t of −5.48 counted 8 duplicate rows. On 440 cells it is −5.19.
+5. **The knee is a steepening, not a jump.** The Δα = 0.02 sweep (560 runs)
+   shows the largest single step is 19% of the fall and the slope rises three-
+   to fourfold over a band ~0.1 wide. §1's "discontinuous" and §12's "narrow
+   band" are gone; "tipping point" now means what Corollary 1 licenses. This is
+   what Corollary 1 always predicted — a per-seller discontinuity summed over
+   twelve sellers is a knee.
+6. §8.6: CR2 p range is 3e-5 down to 1e-11; bootstrap 95th percentiles 1.68 to
+   1.74; CR2 inflation 1.6–1.9% on the H2 contrast. Added the script author's
+   two caveats (the score bootstrap is one-step and its tail is lighter than an
+   exact re-solve on one model; CR2 is a linearisation). The 138-draw
+   calibration is superseded by 2,000 draws across three null scenarios: CR0
+   rejects 5.9–6.0%, CR2 and the bootstrap 4.8–5.2%, sd(z) 1.03–1.07 — so
+   sd(z) = 1.11 was a high draw. The §8.5 adjustment stays at 1.11, now the
+   conservative choice.
+7. Appendix C said "three results survive" and listed four.
+8. §7.7's consumer-net-value difference is 0.867, not 0.86.
+9. `sim/run_exact.py` wrote to the working directory while Appendix B and the
+   README said `results/`. Fixed. `sim/run_knee.py` added — the Δα sweep had no
+   committed driver — and verified to reproduce the shipped file exactly.
+
+**The μ_t calibration, and what it settled.** §11 calibrates μ_t against our
+own §8 `b_value` (1.43–2.23) rather than choosing it. An initial draft of this
+entry reported three ranges (3.3–5.2, 5.9–9.2, 1.0–1.6) and called the exercise
+circular. Both were wrong and are superseded by `c0e1643`. Those ranges came
+from an idealized back-of-envelope — twelve uniform qualities at one common
+margin — not from simulated equilibria, and should not be cited. And the
+circularity is solvable: μ_t × SD(θ_q q − λp) is monotone in μ_t in every
+regime, so scanning finds a unique crossing.
+
+The scan (540 runs: six regimes × nine μ_t values × 10 seeds, on an
+instrumented copy that reproduces every existing output field exactly) gives an
+implied **μ_t of about 0.5 to 5**, 47 of 48 endpoints below 5. The spread is
+driven by how sellers priced out of contention are treated — at the grid's
+ceiling markup they inflate the all-seller dispersion two- to fivefold — so
+four dispersion definitions are reported: 0.5–1.1 using all twelve sellers,
+0.7–5 using contender-based measures, inside which the headline μ_t = 3 falls.
+
+Three consequences, all in the paper: Assumption 2 is the μ_t → ∞ limit and
+nothing measured comes near it, so §5 now marks it as limiting; Appendix C's
+μ_t = 10 and 20 sit above every interval the calibration produces and are
+reframed as robustness points rather than the more realistic agent; and the
+sign of the allocative contrast turns over between μ_t = 2 and 3, **inside**
+the implied range — so §7.3's indeterminacy survives restricting μ_t to what
+our own measurements support, which is the strongest form the claim can take.
+What the calibration does not fix is the mapping: `b_value` records tracking of
+our experimental value index over a catalog we wrote, not the simulation's.
+
+**Third pass, after the v0.13 entry above was written.** A further re-derivation
+tightened five claims that overstated what the runs show:
+
+- **The abstract's 79–91% and 64–100% ranges** are the six configurations
+  tabulated in §7.3, not "every configuration we run" — the exact-best-response
+  runs at n = 5 fall outside them. Scoped accordingly.
+- **The seller-by-seller threshold mechanism** was asserted as what the
+  simulation demonstrates. It is not: it is a theoretical account the aggregate
+  shape is *consistent with*. The abstract, §1, Appendix C and §12 now say so,
+  and record that an informal two-seed look did not show a clean
+  one-jump-per-seller pattern. This corrects prose written in `54b7be3` and
+  `bdf3a14` that claimed the mechanism as shown.
+- **§7.2's mean of per-seed ratios is 1.70** at α = 0.3. The 1.82 figure comes
+  from letting each seed contribute its own peak, which also picks up the noise
+  in where that peak falls.
+- **§8.6's CR2 inflation is 1.6% to 1.8%** on the H2 contrast (all four models
+  between 1.016 and 1.018), not the 1.9% previously stated.
+- **Appendix C's steepening is relative to the 0.15–0.20 slope**, stated
+  explicitly, and the persuadable steps run −0.002 to +0.010.
+- `sim/run_exact.py`'s docstring lists all three sweeps, `fine_ladder` included.
+
+**Published state.** v0.13 is the version posted to SSRN 7516238 on 25 September
+2026 (same DOI, revision rather than new posting). The posted PDF is built from
+the paper source as of commit `c0e1643`; the source has not changed since. v0.11
+remains in the tree as the version originally posted.
+
+## v0.12b — 24 September 2026
+
+Twelve corrections, of which two change headline claims. Nothing in Tables 1–4
+moved; what moved is what the paper says about those numbers.
+
+**From an independent re-derivation** (a separate session recomputed ~300
+reported numbers from the committed data):
+
+1. §7.6 claimed conflicted agents lower both top-three share and consumer net
+   value "at every ψ we tried." False — top-three share is *higher* at ψ = 0.25
+   and 0.5. Rewritten; §11 scoped to ψ ≥ 1.
+2. §8.7 claimed gemma's magnitudes sit inside the hosted range "on every
+   measure." False on three of five, and it contradicted the note under Table 4.
+3. Appendix B claimed one command regenerates every number in §7. The elastic
+   volumes come from `run_elastic.py`; the ψ sweep had no committed driver at
+   all. `sim/run_psi.py` added.
+4. Table 4 factors were computed from rounded shares: gemini 13.6× → 14.5×,
+   gemma 11.6× → 11.4×. Abstract's "8 to 14" → "8.4 to 14.5".
+5. §8.3 placebo 95% upper bounds: +0.96/+1.52/+1.01 → +0.99/+1.54/+1.03.
+6. §8.6: fifteen of the sixteen gemini exclusions are truncations, not sixteen.
+7. The 0 → 0.2 margin move is 1.46 pp, not 1.4.
+8. Appendix C cited a grid discussion that is not in §7.3.
+
+**Found while verifying those:**
+
+9.  Appendix C's convergence check rested on a `settled` flag that is a
+    threshold on average revisions, not a fixed-point test — and Appendix B
+    claimed an early stop the code does not have. Rerun as genuine exact best
+    response (τ → 0, ι = 0) on both grids: 9 of 110 fixed points on the coarse
+    grid, **two of them interior**; 5 of 110 on the fine grid, **none
+    interior**. Better than the claim it replaces: Corollary 2's grid-fineness
+    condition visible in the numerics.
+10. Exact best response at α = 1 leaves three of four headline contrasts
+    intact but moves the robust-agent top-three share from 0.845 to 0.642, so
+    the abstract's "about 85% either way" was a property of the smoothed
+    dynamic.
+11. **τ = 0.15 was never tested.** Swept at 0.05 and 0.30 (440 runs each). The
+    four headline results hold at every τ. The concentration *ratio* and the
+    flatness before the knee do not, and are now flagged where quoted.
+12. **μ_t = 3 was never tested, and this is the one that changes a headline
+    result.** Swept at 10 and 20 (440 runs each). Three contrasts strengthen;
+    the concentration ratio collapses to 1.11×; and §7.3's allocative null
+    *reverses* — persuadability costs −12.2 pp (t = −5.86) and −9.1 pp
+    (t = −5.48) of top-three share against +1.5 pp (t = +0.49) at μ_t = 3. The
+    null was measured against a benchmark too noisy to see the effect. Abstract,
+    §1, §7.3, §12 and Appendix C now carry the conditional statement.
+
+**Added:** §8.6 now reports CR2 and wild cluster bootstrap inference for the
+40-cluster design (`gamma/robust_se.py`). All four H2 results stay significant
+under both; CR0 rejects ~6% under the null against ~5% for CR2 and the
+bootstrap. References added for Kline & Santos (2012) and Pustejovsky & Tipton
+(2018), both verified against Crossref.
+
+`sim2.py` gains `--set KEY=VALUE`, and records `zero_change_sweeps` and
+`final_sweep_changes` (additive — a rerun reproduces pre-change output to 1e-9).
+Appendix B and the README now list every command that produces a number in §7,
+which they did not before.
+
+## v0.12 — 24 September 2026
 
 The open-weight replication registered in v0.11 as incomplete has completed, and
 §8.7 is rewritten from a design statement to a result.
@@ -54,8 +226,6 @@ effect was not reversed; it cannot rule out a small effect on the estimate's siz
 **Still open, and stated as such:** no tau sensitivity analysis, model versions
 unpinned, and the 40-cluster estimator is not yet reported with CR2 or a wild
 cluster bootstrap. See `V0.12_PROTOCOL.md`.
-
-# Changelog
 
 ## v0.11 — 24 Sep 2026
 
@@ -121,11 +291,6 @@ New material:
   rewritten. Two git commands reproduce the ordering.
 - §8.7: the open-weight replication, preregistered and running but incomplete at
   the time of writing. Nothing is reported from partial data.
-
-# After Attention — paper changelog
-
-Versioning rule: any fix to a delivered file gets a new version number. Earlier versions stay in
-the folder rather than being overwritten.
 
 ## v0.10 — 21 Sep 2026
 
@@ -375,123 +540,3 @@ papers (2608.04276, 2608.01406, 2608.03788).
 ## v0.1 — 16 Sep 2026
 - Build-out document: thesis, three propositions, model sketch, preliminary results, outline,
   next steps, risks. Not a manuscript.
-
-## v0.12b — 24 September 2026
-
-Twelve corrections, of which two change headline claims. Nothing in Tables 1–4
-moved; what moved is what the paper says about those numbers.
-
-**From an independent re-derivation** (a separate session recomputed ~300
-reported numbers from the committed data):
-
-1. §7.6 claimed conflicted agents lower both top-three share and consumer net
-   value "at every ψ we tried." False — top-three share is *higher* at ψ = 0.25
-   and 0.5. Rewritten; §11 scoped to ψ ≥ 1.
-2. §8.7 claimed gemma's magnitudes sit inside the hosted range "on every
-   measure." False on three of five, and it contradicted the note under Table 4.
-3. Appendix B claimed one command regenerates every number in §7. The elastic
-   volumes come from `run_elastic.py`; the ψ sweep had no committed driver at
-   all. `sim/run_psi.py` added.
-4. Table 4 factors were computed from rounded shares: gemini 13.6× → 14.5×,
-   gemma 11.6× → 11.4×. Abstract's "8 to 14" → "8.4 to 14.5".
-5. §8.3 placebo 95% upper bounds: +0.96/+1.52/+1.01 → +0.99/+1.54/+1.03.
-6. §8.6: fifteen of the sixteen gemini exclusions are truncations, not sixteen.
-7. The 0 → 0.2 margin move is 1.46 pp, not 1.4.
-8. Appendix C cited a grid discussion that is not in §7.3.
-
-**Found while verifying those:**
-
-9.  Appendix C's convergence check rested on a `settled` flag that is a
-    threshold on average revisions, not a fixed-point test — and Appendix B
-    claimed an early stop the code does not have. Rerun as genuine exact best
-    response (τ → 0, ι = 0) on both grids: 9 of 110 fixed points on the coarse
-    grid, **two of them interior**; 5 of 110 on the fine grid, **none
-    interior**. Better than the claim it replaces: Corollary 2's grid-fineness
-    condition visible in the numerics.
-10. Exact best response at α = 1 leaves three of four headline contrasts
-    intact but moves the robust-agent top-three share from 0.845 to 0.642, so
-    the abstract's "about 85% either way" was a property of the smoothed
-    dynamic.
-11. **τ = 0.15 was never tested.** Swept at 0.05 and 0.30 (440 runs each). The
-    four headline results hold at every τ. The concentration *ratio* and the
-    flatness before the knee do not, and are now flagged where quoted.
-12. **μ_t = 3 was never tested, and this is the one that changes a headline
-    result.** Swept at 10 and 20 (440 runs each). Three contrasts strengthen;
-    the concentration ratio collapses to 1.11×; and §7.3's allocative null
-    *reverses* — persuadability costs −12.2 pp (t = −5.86) and −9.1 pp
-    (t = −5.48) of top-three share against +1.5 pp (t = +0.49) at μ_t = 3. The
-    null was measured against a benchmark too noisy to see the effect. Abstract,
-    §1, §7.3, §12 and Appendix C now carry the conditional statement.
-
-**Added:** §8.6 now reports CR2 and wild cluster bootstrap inference for the
-40-cluster design (`gamma/robust_se.py`). All four H2 results stay significant
-under both; CR0 rejects ~6% under the null against ~5% for CR2 and the
-bootstrap. References added for Kline & Santos (2012) and Pustejovsky & Tipton
-(2018), both verified against Crossref.
-
-`sim2.py` gains `--set KEY=VALUE`, and records `zero_change_sweeps` and
-`final_sweep_changes` (additive — a rerun reproduces pre-change output to 1e-9).
-Appendix B and the README now list every command that produces a number in §7,
-which they did not before.
-
-## v0.13 — 25 September 2026
-
-A second independent re-derivation (~150 claims checked) found nine more
-discrepancies. All are fixed here, and the first retires a headline claim.
-
-1. **The allocative contrast is not robustly identified, and v0.12b's fix was
-   itself wrong.** v0.12b scoped the claim to μ_t, having found the null
-   reverses at μ_t = 10 and 20. The τ sweep reverses it the *other* way:
-
-   | | robust | persuadable | contrast |
-   |---|---|---|---|
-   | exact BR | 0.642 | 0.839 | +19.7 pp |
-   | τ = 0.05 | 0.699 | 0.867 | +16.8 pp |
-   | τ = 0.15 (published) | 0.845 | 0.859 | +1.5 pp (n.s.) |
-   | τ = 0.30 | 0.927 | 0.792 | −13.5 pp |
-   | μ_t = 10 | 0.997 | 0.875 | −12.2 pp |
-   | μ_t = 20 | 1.000 | 0.909 | −9.1 pp |
-
-   The persuadable series sits in 0.79–0.91 throughout; the robust benchmark
-   runs 0.64–1.00. The sign is a reading of the benchmark, and the benchmark is
-   set by τ and μ_t, both chosen. §7.3 now declines to sign the effect —
-   *not robustly identified, because its sign depends on the benchmark
-   equilibrium* — while keeping what the pattern does show: persuasion spending
-   imposes its own allocation largely independent of how sharply the agent
-   discriminates. Abstract, §1, §12 and Appendix C follow.
-2. §7.3's closing line and §12's "concentration more than doubles" contradicted
-   the paper's own sensitivity results. Both restated.
-3. The μ_t = 20 persuasion peak is 1.99×, not 2.03×. §7.2 now also states that
-   every ratio we print is a ratio of the two seed means, not a mean of
-   per-seed ratios (which is 1.82), so each is recoverable from the levels
-   printed beside it.
-4. The μ_t = 20 t of −5.48 counted 8 duplicate rows. On 440 cells it is −5.19.
-5. **The knee is a steepening, not a jump.** The Δα = 0.02 sweep (560 runs)
-   shows the largest single step is 19% of the fall and the slope rises three-
-   to fourfold over a band ~0.1 wide. §1's "discontinuous" and §12's "narrow
-   band" are gone; "tipping point" now means what Corollary 1 licenses. This is
-   what Corollary 1 always predicted — a per-seller discontinuity summed over
-   twelve sellers is a knee.
-6. §8.6: CR2 p range is 3e-5 down to 1e-11; bootstrap 95th percentiles 1.68 to
-   1.74; CR2 inflation 1.6–1.9% on the H2 contrast. Added the script author's
-   two caveats (the score bootstrap is one-step and its tail is lighter than an
-   exact re-solve on one model; CR2 is a linearisation). The 138-draw
-   calibration is superseded by 2,000 draws across three null scenarios: CR0
-   rejects 5.9–6.0%, CR2 and the bootstrap 4.8–5.2%, sd(z) 1.03–1.07 — so
-   sd(z) = 1.11 was a high draw. The §8.5 adjustment stays at 1.11, now the
-   conservative choice.
-7. Appendix C said "three results survive" and listed four.
-8. §7.7's consumer-net-value difference is 0.867, not 0.86.
-9. `sim/run_exact.py` wrote to the working directory while Appendix B and the
-   README said `results/`. Fixed. `sim/run_knee.py` added — the Δα sweep had no
-   committed driver — and verified to reproduce the shipped file exactly.
-
-**A calibration we tried and could not make work.** §11 proposed calibrating
-μ_t from our own §8 `b_value` (1.43–2.23) rather than choosing it. Matching
-μ_t × SD(θ_q q − λp) to it gives μ_t of 3.3–5.2 at the robust α = 1
-equilibrium, 5.9–9.2 at the persuadable one, and 1.0–1.6 in the human-only
-market — and since prices depend on μ_t the exercise is circular. It is also a
-mapping across two different value indices. §11 reports the attempt and its
-failure, and draws the consequence: every regime implies single-digit μ_t,
-while Assumption 2 is the μ_t → ∞ limit, so our own measurements give that
-assumption no support.
