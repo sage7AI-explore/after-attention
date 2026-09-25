@@ -3,6 +3,42 @@
 Versioning rule: any fix to a delivered file gets a new version number. Earlier
 versions stay in the folder rather than being overwritten. Newest first.
 
+## v0.15 — 25 September 2026 (source only; PDF not yet built or posted)
+
+Corrections to v0.14, which is what SSRN carries. **Nine of them are edits that
+were made once and then lost:** the third-pass fixes (`da31f24`) were overwritten
+when `c0e1643` restored a working copy that predated them, so neither the v0.13
+nor the v0.14 text has them, although this changelog said it did. They are
+re-applied here and verified present. Four more come from a fourth re-derivation.
+
+Re-applied:
+1. **§7.2:** the mean of per-seed ratios is **1.70** at α = 0.3 (1.82 only if each
+   seed's own peak is used). v0.13 and v0.14 say 1.82.
+2. **§8.6:** CR2 inflates the H2 standard error by 1.6% to **1.8%** (not 1.9%).
+3. **Appendix C:** the three- to fourfold steepening is relative to the 0.15 to
+   0.20 slope, and the persuadable steps run −0.002 to +0.010.
+4. **The seller-by-seller threshold mechanism is now stated as untested** in the
+   abstract, §1, Appendix C and the Conclusion (it had been asserted as the cause
+   of the knee); Appendix C says an informal two-seed look did not show a clean
+   one-jump-per-seller pattern.
+5. **Abstract:** the 79%–91% and 64%–100% ranges hold for the six configurations
+   in §7.3, not "every configuration we run".
+
+New:
+6. **§11 item 2** said there was no τ sensitivity analysis; Appendix C reports one.
+7. **Appendix C** said the α = 0 dynamic does not settle on either grid; on the
+   coarse grid two of the ten α = 0 runs reach a fixed point (one at each γ; they
+   are two of the seven boundary fixed points).
+8. **The ±5.1 pp interval** on the exact-best-response persuadable top-three share
+   used 1.96 with 20 seeds; with t(19) it is ±5.5.
+9. **§8.7:** the claim that the low early-block estimate comes from sets 0 to 2
+   is now shown directly: all 450 rows of those sets give b_B − b_C = +1.41
+   (se 0.33), against +1.53 for the early block and +2.71 (se 0.42) for the other
+   37 sets. Run after the fact.
+
+Not changed, and still inconsistent: §8.5's H3 intervals use 1.96 while the text
+invokes t(39); the conclusions are the same either way.
+
 ## v0.14 — 25 September 2026
 
 Three edits deferred from v0.13 because the text was frozen at what SSRN carried.
