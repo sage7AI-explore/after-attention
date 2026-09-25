@@ -32,10 +32,10 @@ python3 sim/sim2.py smoke            # ~1 second, sanity check
 | Same, finer grid (App. C) | `python3 sim/run_exact.py fine_ladder` | ~9 min | `results/results_exact_fine_ladder.jsonl` |
 | Fine α grid near the knee (App. C) | `python3 sim/run_knee.py` | ~25 min | `results/results_knee_fine.jsonl` |
 | Exact BR at full adoption (App. C) | `python3 sim/run_exact.py fine` | ~9 min | `results/results_exact_fine.jsonl` |
-| Smoothing sweep (App. C) | `python3 sim/sim2.py headline --set tau=0.05` | ~15 min | `results/results_headline_tau0.05.jsonl` |
-| Smoothing sweep (App. C) | `python3 sim/sim2.py headline --set tau=0.3` | ~15 min | `results/results_headline_tau0.3.jsonl` |
-| Agent-sharpness sweep (App. C) | `python3 sim/sim2.py headline --set mu_t=10` | ~15 min | `results/results_headline_mu10.jsonl` |
-| Agent-sharpness sweep (App. C) | `python3 sim/sim2.py headline --set mu_t=20` | ~15 min | `results/results_headline_mu20.jsonl` |
+| Smoothing sweep (App. C) | `python3 sim/sim2.py headline --set tau=0.05 --out results/results_headline_tau0.05.jsonl` | ~15 min | `results/results_headline_tau0.05.jsonl` |
+| Smoothing sweep (App. C) | `python3 sim/sim2.py headline --set tau=0.3 --out results/results_headline_tau0.3.jsonl` | ~15 min | `results/results_headline_tau0.3.jsonl` |
+| Agent-sharpness sweep (App. C) | `python3 sim/sim2.py headline --set mu_t=10 --out results/results_headline_mu10.jsonl` | ~15 min | `results/results_headline_mu10.jsonl` |
+| Agent-sharpness sweep (App. C) | `python3 sim/sim2.py headline --set mu_t=20 --out results/results_headline_mu20.jsonl` | ~15 min | `results/results_headline_mu20.jsonl` |
 
 Then:
 
@@ -46,6 +46,8 @@ python3 sim/plot_phase.py results/results_phase.jsonl figures/fig_phase.png    #
 
 Sweeps append to their output file and resume if interrupted: re-running the same command picks up
 where it stopped rather than starting over.
+For the same reason every variant sweep above passes its own `--out`: without one it writes to
+`results_headline.jsonl`, finds 440 rows already present, and exits having done nothing.
 
 ## What the model does
 
