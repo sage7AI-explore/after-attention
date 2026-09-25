@@ -3,10 +3,6 @@
 Versioning rule: any fix to a delivered file gets a new version number. Earlier
 versions stay in the folder rather than being overwritten. Newest first.
 
-This file and `paper/CHANGELOG.md` are kept identical. The duplication is
-historical and one of the two should go; until then, edit either and copy
-across.
-
 ## v0.13 — 25 September 2026
 
 A second independent re-derivation (~150 claims checked) found nine more
