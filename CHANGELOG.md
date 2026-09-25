@@ -3,6 +3,46 @@
 Versioning rule: any fix to a delivered file gets a new version number. Earlier
 versions stay in the folder rather than being overwritten. Newest first.
 
+This file and `paper/CHANGELOG.md` are kept identical. The duplication is
+historical and one of the two should go; until then, edit either and copy
+across.
+
+## v0.14 — 25 September 2026
+
+Three edits deferred from v0.13 because the text was frozen at what SSRN carried.
+All three add material; none corrects an error in v0.13. Batched so they cost one
+SSRN revision rather than three.
+
+1. **§8.2** states that the registered H2 result survives CR2 and the wild cluster
+   bootstrap on all four models, pointing to §8.6 for the figures and caveats.
+   §8.6 had this; §8.2, where a reader meets the estimator, did not.
+2. **§8.5b, new:** how much the buying instruction matters. The headline factor
+   pools five instructions and they are not interchangeable. The B − C gap is
+   positive in **all twenty** model × instruction cells (smallest +0.040), so no
+   instruction we tried confers immunity — but the persuasion-arm share varies
+   about fivefold across them on `claude-sonnet-5`, and the two instructions that
+   name *value for money* draw least on every model. Refitting within instruction
+   puts most of that in the baseline rather than the contrast: +2.56 to +2.97,
+   +2.63 to +3.34 and +2.17 to +3.42 on three models, +1.09 to +3.79 on
+   `gemini-3.8-flash`, where two cells are not estimable at all because arms A and
+   C never chose the target (0 of 400) and the ML estimate does not exist under
+   that separation. Those two are reported as contrasts, not ratios. Marked
+   exploratory: the instructions were fixed in advance and randomized across, but
+   nothing about framing was registered, and the split was run after the data
+   existed. The abstract and §8.6 now say the pooled factor averages over
+   instructions that differ severalfold; §11 gains an item saying a registered
+   design crossing instruction with treatment is what would turn this into a
+   finding. Every number independently recomputed from the committed data before
+   being written in — the raw table and all twenty refits.
+3. **§8.1** states what can and cannot be pinned about the models: the four
+   identifiers are the strings we sent, the three hosted ones are aliases rather
+   than dated snapshots, and the provider's resolved-model string, request IDs and
+   per-call timestamps were never logged and cannot be recovered. Dates and
+   sampling configuration are given. Only §8.7's open-weight run is pinned, by a
+   weights digest on every row.
+
+§11's limitations renumbered to 13 items.
+
 ## v0.13 — 25 September 2026
 
 A second independent re-derivation (~150 claims checked) found nine more

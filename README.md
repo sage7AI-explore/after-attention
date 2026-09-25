@@ -2,9 +2,10 @@
 
 Replication material for *After Attention: The Economics of Markets Where the Buyer Is an Agent*
 (Vissa and Sangaraju, 2026) — **[SSRN 7516238](https://papers.ssrn.com/sol3/papers.cfm?abstract_id=7516238)** · DOI [10.2139/ssrn.7516238](https://doi.org/10.2139/ssrn.7516238). The current draft is
-[`paper/After_Attention_draft_v0.13.pdf`](paper/After_Attention_draft_v0.13.pdf). The version first posted to
-SSRN is [`v0.11`](paper/After_Attention_draft_v0.11.pdf); v0.13 revises it and withdraws or qualifies several
-of its claims (see `CHANGELOG.md`). Earlier drafts are kept beside them so that withdrawn results stay
+[`paper/After_Attention_draft_v0.14.pdf`](paper/After_Attention_draft_v0.14.pdf). The version first posted to
+SSRN is [`v0.11`](paper/After_Attention_draft_v0.11.pdf); v0.13 revised it and withdrew or qualified several
+of its claims, and v0.14 adds three sections without changing any v0.13 result (see `CHANGELOG.md`).
+SSRN currently carries v0.13; v0.14 is not yet posted. Earlier drafts are kept beside them so that withdrawn results stay
 inspectable.
 
 The paper models a consumer market with a mixed population of human and agent ("twin") buyers, in
