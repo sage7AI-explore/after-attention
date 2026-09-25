@@ -37,8 +37,20 @@ New:
    (se 0.33), against +1.53 for the early block and +2.71 (se 0.42) for the other
    37 sets. Run after the fact.
 
-Not changed, and still inconsistent: §8.5's H3 intervals use 1.96 while the text
-invokes t(39); the conclusions are the same either way.
+Added after a check of the committed v0.15 text against the list above:
+10. **§8.5:** the H3 intervals use 1.96 while the surrounding sentence invokes
+    t(39). The t(39) intervals, [−0.55, +1.10] (`claude-sonnet-5`) and
+    [−0.43, +0.61] (`gpt-5.6-terra`), are now stated beside them; neither
+    conclusion changes.
+11. **§1 (third contribution):** "stable across our robustness checks" is now
+    "stable across the six configurations of §7.3". Item 5 had scoped the
+    79%–91% range in the abstract only; this sentence made the same claim. The
+    coarse-grid exact-best-response runs give 0.750 for the persuadable series
+    and the reduced variant configuration 0.69, both outside 79%–91%.
+
+Not changed: the abstract, §1 and the introduction give the three- to fourfold
+steepening without its baseline (Appendix C now does). Relative to the average
+slope over α in [0, 0.2], about 0.07 per unit, it is roughly tenfold.
 
 ## v0.14 — 25 September 2026
 
