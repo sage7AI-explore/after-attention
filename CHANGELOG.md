@@ -3,7 +3,7 @@
 Versioning rule: any fix to a delivered file gets a new version number. Earlier
 versions stay in the folder rather than being overwritten. Newest first.
 
-## v0.15 — 25 September 2026 (source only; PDF not yet built or posted)
+## v0.15 — 25 September 2026 (posted to SSRN 25 September 2026, 37 pages)
 
 Corrections to v0.14, which is what SSRN carries. **Items 1 to 5 are edits that
 were made once and then lost:** the third-pass fixes (`da31f24`) were overwritten
