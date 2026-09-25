@@ -48,6 +48,11 @@ Added after a check of the committed v0.15 text against the list above:
     coarse-grid exact-best-response runs give 0.750 for the persuadable series
     and the reduced variant configuration 0.69, both outside 79%–91%.
 
+12. **Appendix B:** in the two sweep rows the long `--out results/...` paths overprinted
+    the Output column (visible in the rendered PDF, including the posted v0.14). The
+    commands now read `--out <output>`, pointing to the Output column; the README has
+    the full commands.
+
 Not changed: the abstract, §1 and the introduction give the three- to fourfold
 steepening without its baseline (Appendix C now does). Relative to the average
 slope over α in [0, 0.2], about 0.07 per unit, it is roughly tenfold.
