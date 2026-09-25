@@ -5,11 +5,12 @@ versions stay in the folder rather than being overwritten. Newest first.
 
 ## v0.15 — 25 September 2026 (source only; PDF not yet built or posted)
 
-Corrections to v0.14, which is what SSRN carries. **Nine of them are edits that
+Corrections to v0.14, which is what SSRN carries. **Items 1 to 5 are edits that
 were made once and then lost:** the third-pass fixes (`da31f24`) were overwritten
 when `c0e1643` restored a working copy that predated them, so neither the v0.13
 nor the v0.14 text has them, although this changelog said it did. They are
-re-applied here and verified present. Four more come from a fourth re-derivation.
+re-applied here and verified present. Items 6 to 9 are new, from a fourth
+re-derivation.
 
 Re-applied:
 1. **§7.2:** the mean of per-seed ratios is **1.70** at α = 0.3 (1.82 only if each
