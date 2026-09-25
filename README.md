@@ -30,6 +30,7 @@ python3 sim/sim2.py smoke            # ~1 second, sanity check
 | ψ sweep (§7.6) | `python3 sim/run_psi.py` | ~7 min | `results/results_psi_sensitivity.jsonl` |
 | Exact-BR convergence check (App. C) | `python3 sim/run_exact.py coarse` | ~6 min | `results/results_exact_coarse.jsonl` |
 | Same, finer grid (App. C) | `python3 sim/run_exact.py fine_ladder` | ~9 min | `results/results_exact_fine_ladder.jsonl` |
+| Fine α grid near the knee (App. C) | `python3 sim/run_knee.py` | ~25 min | `results/results_knee_fine.jsonl` |
 | Exact BR at full adoption (App. C) | `python3 sim/run_exact.py fine` | ~9 min | `results/results_exact_fine.jsonl` |
 | Smoothing sweep (App. C) | `python3 sim/sim2.py headline --set tau=0.05` | ~15 min | `results/results_headline_tau0.05.jsonl` |
 | Smoothing sweep (App. C) | `python3 sim/sim2.py headline --set tau=0.3` | ~15 min | `results/results_headline_tau0.3.jsonl` |
@@ -157,7 +158,7 @@ match the position the runner recorded.
 
 ```
 sim/        sim2.py (harness), plot2.py, plot_phase.py, run_elastic.py, run_psi.py,
-            run_exact.py, legacy/sim.py
+            run_exact.py, run_knee.py, legacy/sim.py
 gamma/      catalog.py, run.py, estimate.py, context.py, pricing.py, PREREGISTRATION.md
 results/    .jsonl output, one line per run
 figures/    generated figures

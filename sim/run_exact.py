@@ -15,7 +15,7 @@ mean a pure-strategy fixed point rather than a coincidence of skips. Two sweeps:
     python3 sim/run_exact.py coarse
     python3 sim/run_exact.py fine
 
-Writes results_exact_<sweep>.jsonl in the working directory. Appends and
+Writes results/results_exact_<sweep>.jsonl, relative to the working directory. Appends and
 resumes: re-running the same command picks up where it stopped.
 """
 import sim2, json, os, sys
@@ -48,7 +48,8 @@ def job(sp):
 if __name__ == "__main__":
     sweep = sys.argv[1]
     specs = SWEEPS[sweep]
-    out = f"results_exact_{sweep}.jsonl"
+    os.makedirs("results", exist_ok=True)
+    out = f"results/results_exact_{sweep}.jsonl"
     done = sum(1 for _ in open(out)) if os.path.exists(out) else 0
     specs = specs[done:]
     print(f"{sweep}: {done} already done, {len(specs)} to go", flush=True)

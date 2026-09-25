@@ -433,3 +433,65 @@ bootstrap. References added for Kline & Santos (2012) and Pustejovsky & Tipton
 `final_sweep_changes` (additive — a rerun reproduces pre-change output to 1e-9).
 Appendix B and the README now list every command that produces a number in §7,
 which they did not before.
+
+## v0.13 — 25 September 2026
+
+A second independent re-derivation (~150 claims checked) found nine more
+discrepancies. All are fixed here, and the first retires a headline claim.
+
+1. **The allocative contrast is not robustly identified, and v0.12b's fix was
+   itself wrong.** v0.12b scoped the claim to μ_t, having found the null
+   reverses at μ_t = 10 and 20. The τ sweep reverses it the *other* way:
+
+   | | robust | persuadable | contrast |
+   |---|---|---|---|
+   | exact BR | 0.642 | 0.839 | +19.7 pp |
+   | τ = 0.05 | 0.699 | 0.867 | +16.8 pp |
+   | τ = 0.15 (published) | 0.845 | 0.859 | +1.5 pp (n.s.) |
+   | τ = 0.30 | 0.927 | 0.792 | −13.5 pp |
+   | μ_t = 10 | 0.997 | 0.875 | −12.2 pp |
+   | μ_t = 20 | 1.000 | 0.909 | −9.1 pp |
+
+   The persuadable series sits in 0.79–0.91 throughout; the robust benchmark
+   runs 0.64–1.00. The sign is a reading of the benchmark, and the benchmark is
+   set by τ and μ_t, both chosen. §7.3 now declines to sign the effect —
+   *not robustly identified, because its sign depends on the benchmark
+   equilibrium* — while keeping what the pattern does show: persuasion spending
+   imposes its own allocation largely independent of how sharply the agent
+   discriminates. Abstract, §1, §12 and Appendix C follow.
+2. §7.3's closing line and §12's "concentration more than doubles" contradicted
+   the paper's own sensitivity results. Both restated.
+3. The μ_t = 20 persuasion peak is 1.99×, not 2.03×. §7.2 now also states that
+   every ratio we print is a ratio of the two seed means, not a mean of
+   per-seed ratios (which is 1.82), so each is recoverable from the levels
+   printed beside it.
+4. The μ_t = 20 t of −5.48 counted 8 duplicate rows. On 440 cells it is −5.19.
+5. **The knee is a steepening, not a jump.** The Δα = 0.02 sweep (560 runs)
+   shows the largest single step is 19% of the fall and the slope rises three-
+   to fourfold over a band ~0.1 wide. §1's "discontinuous" and §12's "narrow
+   band" are gone; "tipping point" now means what Corollary 1 licenses. This is
+   what Corollary 1 always predicted — a per-seller discontinuity summed over
+   twelve sellers is a knee.
+6. §8.6: CR2 p range is 3e-5 down to 1e-11; bootstrap 95th percentiles 1.68 to
+   1.74; CR2 inflation 1.6–1.9% on the H2 contrast. Added the script author's
+   two caveats (the score bootstrap is one-step and its tail is lighter than an
+   exact re-solve on one model; CR2 is a linearisation). The 138-draw
+   calibration is superseded by 2,000 draws across three null scenarios: CR0
+   rejects 5.9–6.0%, CR2 and the bootstrap 4.8–5.2%, sd(z) 1.03–1.07 — so
+   sd(z) = 1.11 was a high draw. The §8.5 adjustment stays at 1.11, now the
+   conservative choice.
+7. Appendix C said "three results survive" and listed four.
+8. §7.7's consumer-net-value difference is 0.867, not 0.86.
+9. `sim/run_exact.py` wrote to the working directory while Appendix B and the
+   README said `results/`. Fixed. `sim/run_knee.py` added — the Δα sweep had no
+   committed driver — and verified to reproduce the shipped file exactly.
+
+**A calibration we tried and could not make work.** §11 proposed calibrating
+μ_t from our own §8 `b_value` (1.43–2.23) rather than choosing it. Matching
+μ_t × SD(θ_q q − λp) to it gives μ_t of 3.3–5.2 at the robust α = 1
+equilibrium, 5.9–9.2 at the persuadable one, and 1.0–1.6 in the human-only
+market — and since prices depend on μ_t the exercise is circular. It is also a
+mapping across two different value indices. §11 reports the attempt and its
+failure, and draws the consequence: every regime implies single-digit μ_t,
+while Assumption 2 is the μ_t → ∞ limit, so our own measurements give that
+assumption no support.
