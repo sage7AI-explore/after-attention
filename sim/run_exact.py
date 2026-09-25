@@ -1,18 +1,22 @@
-"""Exact best response, for the two comparisons in Appendix C.
+"""Exact best response, for the comparisons in Appendix C.
 
 The smoothed dynamic used throughout section 7 has temperature tau and inertia
 iota. Exact best response is the tau -> 0 limit with iota = 0: we take tau = 1e-9,
 at which the logit weight is numerically a point mass on the argmax, and every
 seller revises in every sweep. Only under iota = 0 does a sweep with zero changes
-mean a pure-strategy fixed point rather than a coincidence of skips. Two sweeps:
+mean a pure-strategy fixed point rather than a coincidence of skips. Three sweeps:
 
-  coarse  the earlier 12-point configuration, 11 alphas x 2 gammas x 5 seeds,
-          to count how many runs reach a pure-strategy fixed point and where.
-  fine    the headline 16-point configuration at full adoption, 20 seeds per
-          regime, to check that the top-three true-value share on the finer
-          grid is not an artifact of the smoothing.
+  coarse       the earlier 12-point configuration, 11 alphas x 2 gammas x 5 seeds,
+               to count how many runs reach a pure-strategy fixed point and where.
+  fine_ladder  the same alpha ladder on the headline 16-point markup and 8-point
+               spend grids, to test whether the interior fixed points found on the
+               coarse grid survive refinement.
+  fine         the headline 16-point configuration at full adoption, 20 seeds per
+               regime, to check that the top-three true-value share on the finer
+               grid is not an artifact of the smoothing.
 
     python3 sim/run_exact.py coarse
+    python3 sim/run_exact.py fine_ladder
     python3 sim/run_exact.py fine
 
 Writes results/results_exact_<sweep>.jsonl, relative to the working directory. Appends and
