@@ -12,3 +12,12 @@ gamma/*.backup_before_prune.jsonl
 .DS_Store
 **/.DS_Store
 
+
+# Submission packs and inter-session working notes are not public artifacts.
+# (V0.12_PROTOCOL.md is deliberately tracked: section 8.7 cites it as the
+#  pre-committed protocol note, so it has to be publicly verifiable.)
+paper/SUBMISSION_PACK*
+paper/CLI_*
+paper/REFEREE_PASS*
+paper/NOTE_TO_*
+PLAN_TO_DONE.md
