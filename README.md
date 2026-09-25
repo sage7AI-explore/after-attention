@@ -5,7 +5,7 @@ Replication material for *After Attention: The Economics of Markets Where the Bu
 [`paper/After_Attention_draft_v0.14.pdf`](paper/After_Attention_draft_v0.14.pdf). The version first posted to
 SSRN is [`v0.11`](paper/After_Attention_draft_v0.11.pdf); v0.13 revised it and withdrew or qualified several
 of its claims, and v0.14 adds three sections without changing any v0.13 result (see `CHANGELOG.md`).
-SSRN currently carries v0.13; v0.14 is not yet posted. Earlier drafts are kept beside them so that withdrawn results stay
+SSRN carries v0.14 (revised 25 September 2026). Earlier drafts are kept beside it so that withdrawn results stay
 inspectable.
 
 The paper models a consumer market with a mixed population of human and agent ("twin") buyers, in
